@@ -14,7 +14,7 @@ Docs: [write-up](docs/WRITEUP.md) · [measurement and pilot plan](docs/MEASUREME
   - Customers never touch tables directly. They call the security-definer functions in [`supabase/migrations`](supabase/migrations), which validate every order.
   - Row-level security gives staff read access.
   - Realtime pushes new orders to the dashboard.
-- SMS through [Arkesel](https://arkesel.com), sent from the database with `pg_net`. The API key lives in Supabase Vault and never reaches the browser.
+- SMS through [SasuSync](https://sms.sasusync.com), sent from the database with `pg_net`. The API key lives in Supabase Vault and never reaches the browser.
 
 ## Set up
 
@@ -28,9 +28,9 @@ npm test
 Database:
 1. Apply `supabase/migrations/*.sql` to the project.
 2. Optional: load the sample history with `supabase/sample-data.sql`. Those rows are flagged `is_sample` and never texted.
-3. Store the Arkesel key in Vault:
+3. Store the SasuSync key in Vault (and use a sender ID approved on that SasuSync account):
    ```sql
-   select vault.create_secret('<arkesel api key>', 'arkesel_api_key');
+   select vault.create_secret('<sasusync api key>', 'sasusync_api_key');
    update settings set value = 'GoodCane' where key = 'sms_sender';  -- your approved sender ID
    ```
 4. Add a staff member: create the user in Supabase Auth, then

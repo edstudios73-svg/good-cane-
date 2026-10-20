@@ -1,7 +1,7 @@
 -- GoodCane pre-orders: schema, access rules, order + SMS functions.
 -- Customers never touch tables directly; they call the security-definer
 -- functions below. Staff (rows in public.staff) can read everything and change
--- order status through staff_* functions.
+-- order status through staff_* functions. Texts go out through SasuSync.
 
 create extension if not exists pgcrypto with schema extensions;
 create extension if not exists pg_net with schema extensions;
@@ -65,6 +65,7 @@ create table public.sms_log (
   body text not null,
   status text not null check (status in ('queued', 'sent', 'failed', 'skipped')),
   request_id bigint,
+  provider_ref text,
   error text,
   created_at timestamptz not null default now()
 );
@@ -90,7 +91,12 @@ create table public.settings (
   value text not null
 );
 
-insert into public.settings (key, value) values ('sms_live', 'true'), ('sms_sender', 'GoodCane');
+-- sms_endpoint: https://sms.sasusync.com/api/v1/send (live) or
+-- https://sms.sasusync.com/smssandbox/v1/send (free, nothing delivered).
+insert into public.settings (key, value) values
+  ('sms_live', 'true'),
+  ('sms_sender', 'GoodCane'),
+  ('sms_endpoint', 'https://sms.sasusync.com/api/v1/send');
 
 insert into public.products (id, name, sort) values
   ('mint-lemon', 'Mint & Lemon Sugarcane', 1),
@@ -172,19 +178,21 @@ language sql stable set search_path = '' as $$
     'kind', m.kind, 'to', m.to_phone, 'body', m.body, 'status', m.status, 'error', m.error, 'at', m.created_at)
 $$;
 
--- Hands a text to Arkesel through pg_net and logs it. Delivery results come
--- back asynchronously; refresh_sms_status() picks them up.
+-- Hands a text to SasuSync through pg_net and logs it. The provider's answer
+-- arrives asynchronously; refresh_sms_status() picks it up.
 create function public.send_text(p_phone text, p_body text, p_kind text, p_customer uuid, p_order uuid, p_batch date, p_log_body text default null)
 returns void language plpgsql security definer set search_path = '' as $$
 declare
   api_key text;
   live boolean;
   sender text;
+  endpoint text;
   req bigint;
 begin
   select value = 'true' into live from public.settings where key = 'sms_live';
   select value into sender from public.settings where key = 'sms_sender';
-  select decrypted_secret into api_key from vault.decrypted_secrets where name = 'arkesel_api_key';
+  select value into endpoint from public.settings where key = 'sms_endpoint';
+  select decrypted_secret into api_key from vault.decrypted_secrets where name = 'sasusync_api_key';
 
   if p_phone is null or p_phone !~ '^0[2-5][0-9]{8}$' then
     insert into public.sms_log (customer_id, order_id, batch_date, kind, to_phone, body, status, error)
@@ -198,9 +206,9 @@ begin
   end if;
 
   select net.http_post(
-    url := 'https://sms.arkesel.com/api/v2/sms/send',
+    url := coalesce(endpoint, 'https://sms.sasusync.com/api/v1/send'),
     body := jsonb_build_object('sender', coalesce(sender, 'GoodCane'), 'message', p_body, 'recipients', jsonb_build_array('233' || substr(p_phone, 2))),
-    headers := jsonb_build_object('api-key', api_key, 'Content-Type', 'application/json'),
+    headers := jsonb_build_object('X-API-Key', api_key, 'Content-Type', 'application/json'),
     timeout_milliseconds := 10000
   ) into req;
 
@@ -223,13 +231,26 @@ begin
 end
 $$;
 
+-- SasuSync answers {"success": true, "data": {"task_id": ...}} on acceptance,
+-- or an HTTP error with a "detail" string written for a person.
+create function public.safe_jsonb(t text) returns jsonb
+language plpgsql immutable set search_path = '' as $$
+begin
+  return t::jsonb;
+exception when others then
+  return null;
+end
+$$;
+
 create function public.refresh_sms_status() returns void
 language sql security definer set search_path = '' as $$
   update public.sms_log m
-  set status = case when r.status_code between 200 and 299 and coalesce(r.content::jsonb ->> 'status', '') = 'success' then 'sent' else 'failed' end,
-      error = case when r.status_code between 200 and 299 and coalesce(r.content::jsonb ->> 'status', '') = 'success' then null
-                   else coalesce(left(r.content::jsonb ->> 'message', 200), r.error_msg, 'HTTP ' || r.status_code) end
-  from net._http_response r
+  set status = case when ok then 'sent' else 'failed' end,
+      provider_ref = j -> 'data' ->> 'task_id',
+      error = case when ok then null else coalesce(left(j ->> 'detail', 200), left(r.error_msg, 200), 'HTTP ' || r.status_code) end
+  from net._http_response r,
+       lateral (select public.safe_jsonb(r.content) as j) parsed,
+       lateral (select r.status_code between 200 and 299 and coalesce((j ->> 'success')::boolean, false) as ok) outcome
   where m.status = 'queued' and m.request_id = r.id
 $$;
 

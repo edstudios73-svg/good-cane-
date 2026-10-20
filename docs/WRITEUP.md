@@ -52,7 +52,7 @@ There are two separate apps built from one codebase, sharing one Supabase databa
 **Staff dashboard:**
 - **Demand:** for each batch, *confirmed* bottles, bottles *awaiting confirmation*, cancellations, and a **suggested batch size per flavour**. It updates live as orders arrive.
 - **Orders:** confirm, mark paid (by hand, since payment happens outside the app), mark delivered, or cancel with a reason. Each change texts the customer, which can be switched off per session.
-- **SMS:** send the weekly reminder to opted-in customers who haven't ordered yet, and see every text with its delivery result from Arkesel.
+- **SMS:** send the weekly reminder to opted-in customers who haven't ordered yet, and see every text with its delivery result from SasuSync.
 - **Results:** repeat-order rate, confirmed orders per week, cancellation rate and forecast accuracy.
 
 ### SMS
@@ -66,7 +66,7 @@ There are two separate apps built from one codebase, sharing one Supabase databa
 
 How sending works:
 - Texts are written by `public.sms_text()` from fixed templates, all under 160 characters, so nobody can make the system send arbitrary messages.
-- They are sent from the database through Arkesel using `pg_net`. The API key is stored in Supabase Vault, not in the website.
+- They are sent from the database through SasuSync using `pg_net`. The API key is stored in Supabase Vault, not in the website.
 - Delivery results are read back into `sms_log`.
 - Sending is controlled by the `sms_live` setting and can be paused instantly.
 
@@ -102,7 +102,7 @@ A request is **not** a sale. Only `confirmed`, `paid` and `delivered` count as f
 | A4 | Bottle size(s) and **prices**: unknown, so not shown | Totals and payment |
 | A5 | Pickup points and **delivery areas/fees**: unknown, so placeholders are used | Fulfilment options |
 | A6 | Payment is by mobile money or on collection, confirmed by GoodCane by hand | The "Paid" step |
-| A7 | Customers are happy to get order updates and an opt-in weekly reminder by **SMS** from a "GoodCane" sender ID | Reminder channel; sender ID must be registered with Arkesel |
+| A7 | Customers are happy to get order updates and an opt-in weekly reminder by **SMS** from a "GoodCane" sender ID | Reminder channel; sender ID must be registered with SasuSync |
 | A8 | Shelf life is short enough that over-production means waste | The value of forecasting |
 | A9 | Someone at GoodCane can check the dashboard daily during the pre-order window | Confirmations happen in time |
 | A10 | Walk-in sales continue alongside pre-orders | The forecast covers pre-orders only; GoodCane adds a walk-in buffer |
@@ -112,6 +112,6 @@ A request is **not** a sale. Only `confirmed`, `paid` and `delivered` count as f
 | Phase | When | What |
 |---|---|---|
 | **0. Validate** | Week 0 | Walk through the live site with GoodCane. Confirm A1–A10. Set real flavours, sizes, prices and pickup/delivery areas. Agree SMS wording and approve live sending. |
-| **1. Hand over** | Week 1 | Give GoodCane staff their logins. Register the GoodCane sender ID with Arkesel under GoodCane's account, agree the text wording, set real sizes, prices and pickup points, and delete the sample history. |
+| **1. Hand over** | Week 1 | Give GoodCane staff their logins. Register the GoodCane sender ID with SasuSync under GoodCane's account, agree the text wording, set real sizes, prices and pickup points, and delete the sample history. |
 | **2. Pilot** | Weeks 2–5 | 20–30 existing WhatsApp customers who opt in. Share the link on WhatsApp Status and in the TikTok bio with `?src=` tags. Texts run on GoodCane's approved sender ID; reminders go out only when staff press Send. |
 | **3. Review** | Week 6 | Compare against the success thresholds in [MEASUREMENT.md](./MEASUREMENT.md). Decide whether to open to everyone, add mobile-money payment (with GoodCane's approval), or try subscriptions. |
