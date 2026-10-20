@@ -1,9 +1,9 @@
 import { formatDay, isOpen, openBatches, pastBatches, type Batch } from '../../domain/batches'
-import { useStore } from '../../store'
+import { useStaff } from '../../staff/StaffProvider'
 
 /** Open batches first, then recent closed ones. */
 export function useBatchOptions(): Batch[] {
-  const { now } = useStore()
+  const { now } = useStaff()
   return [...openBatches(now, 3), ...pastBatches(now, 6)]
 }
 
@@ -15,7 +15,7 @@ export function batchLabel(b: Batch, now: Date): string {
 }
 
 export function BatchPicker({ value, onChange, allowAll }: { value: string; onChange: (id: string) => void; allowAll?: boolean }) {
-  const { now } = useStore()
+  const { now } = useStaff()
   const options = useBatchOptions()
   return (
     <label className="field inline">

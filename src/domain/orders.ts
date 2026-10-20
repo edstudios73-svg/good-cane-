@@ -12,6 +12,15 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   cancelled: 'Cancelled',
 }
 
+/** Wording customers see; staff see STATUS_LABEL. */
+export const CUSTOMER_STATUS_LABEL: Record<OrderStatus, string> = {
+  requested: 'Awaiting confirmation',
+  confirmed: 'Confirmed',
+  paid: 'Paid',
+  fulfilled: 'Collected',
+  cancelled: 'Cancelled',
+}
+
 /** Allowed business transitions. Payment is recorded manually — no live payments. */
 const BUSINESS_NEXT: Record<OrderStatus, OrderStatus[]> = {
   requested: ['confirmed', 'cancelled'],

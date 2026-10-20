@@ -1,11 +1,22 @@
-// Core data model. Everything that ships in the demo is SAMPLE data — see seed.ts.
+// Shapes shared by the shop, the staff dashboard and the database functions.
 
 export interface Product {
   id: string
   name: string
+  /** Name without "Sugarcane", for compact two-line titles. */
+  short: string
+  /** Longer copy for the flavour page. */
+  about: string
+  /** Bottle cut out of the photo, on white — sits on `tint` via multiply. */
+  bottle: string
+  /** What's in it, as printed on the label. */
+  ingredients: string
   description: string
-  /** Liquid colour used for the bottle illustration. */
-  colour: string
+  /** Label colour, used as the flavour's accent. */
+  accent: string
+  /** Light tint of the label colour for backgrounds. */
+  tint: string
+  image: string
 }
 
 /**
@@ -35,6 +46,8 @@ export interface StatusChange {
 
 export interface Order {
   id: string
+  /** Lets the person who placed the order view it without signing in. */
+  viewToken?: string
   /** Short human number shown on receipts, e.g. #0042. */
   number: number
   customerId: string
@@ -74,20 +87,35 @@ export interface BatchRecord {
   sold?: number
 }
 
-/** Reminders are never sent by the prototype — only previewed and logged. */
-export interface ReminderLog {
+export type SmsKind = 'received' | 'confirmed' | 'paid' | 'fulfilled' | 'cancelled' | 'reminder' | 'login_code'
+
+/** skipped = not handed to the provider (sample customer, or SMS not configured). */
+export type SmsStatus = 'queued' | 'sent' | 'failed' | 'skipped'
+
+export interface SmsLog {
   id: string
-  customerId: string
-  batchId: string
+  customerId: string | null
+  orderId?: string | null
+  batchId: string | null
+  kind: SmsKind
+  to: string
+  body: string
+  status: SmsStatus
   at: string
-  message: string
+  error?: string | null
+}
+
+/** The signed-in shopper, as the shop sees them. */
+export interface Me {
+  id: string
+  name: string
+  phone: string
+  remindersOptIn: boolean
 }
 
 export interface AppState {
-  version: number
-  nextOrderNumber: number
   customers: Customer[]
   orders: Order[]
   batchRecords: BatchRecord[]
-  reminderLog: ReminderLog[]
+  smsLog: SmsLog[]
 }

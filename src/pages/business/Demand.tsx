@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { batchFromId, formatCutoff, isOpen, pastBatches, timeLeft } from '../../domain/batches'
 import { demandForBatch, forecastBottles, forecastForProduct, historicalConfirmRate } from '../../domain/demand'
 import { forecastAccuracy, pct } from '../../domain/metrics'
-import { PRODUCTS } from '../../domain/seed'
-import { Bottle, SampleTag, productName } from '../../components/ui'
+import { PRODUCTS } from '../../domain/catalog'
+import { CountUp, FlavourDot, SampleTag, productName } from '../../components/ui'
 import { href, navigate, type Route } from '../../router'
-import { useStore } from '../../store'
+import { useStaff } from '../../staff/StaffProvider'
 import { BatchPicker, useBatchOptions } from './BatchPicker'
 
 export function Demand({ route }: { route: Route }) {
-  const { state, now, saveBatchRecord } = useStore()
+  const { state, now, saveBatchRecord } = useStaff()
   const options = useBatchOptions()
   const q = route.query.get('batch')
   const batchId = options.some((b) => b.id === q) ? q! : options[0].id
@@ -34,7 +34,7 @@ export function Demand({ route }: { route: Route }) {
   return (
     <div className="stack">
       <div className="row-between wrap">
-        <BatchPicker value={batchId} onChange={(id) => navigate(`/business/demand?batch=${id}`)} />
+        <BatchPicker value={batchId} onChange={(id) => navigate(`/demand?batch=${id}`)} />
         <SampleTag>Sample data</SampleTag>
       </div>
       <p className="small">
@@ -50,16 +50,20 @@ export function Demand({ route }: { route: Route }) {
       <div className="tiles">
         <div className="tile tile-firm">
           <span className="mono small">CONFIRMED BOTTLES</span>
-          <strong>{d.firmBottles}</strong>
+          <strong>
+            <CountUp value={d.firmBottles} />
+          </strong>
           <span className="small">
             {d.orders.confirmed + d.orders.paid + d.orders.fulfilled} orders · {d.totals.paid + d.totals.fulfilled} paid
           </span>
         </div>
         <div className="tile tile-pending">
           <span className="mono small">AWAITING CONFIRMATION</span>
-          <strong>{d.pendingBottles}</strong>
+          <strong>
+            <CountUp value={d.pendingBottles} />
+          </strong>
           <span className="small">
-            {d.orders.requested} requests — <a href={href(`/business/orders?batch=${batchId}&status=requested`)}>review</a>
+            {d.orders.requested} requests · <a href={href(`/orders?batch=${batchId}&status=requested`)}>review</a>
           </span>
         </div>
         <div className="tile">
@@ -71,7 +75,9 @@ export function Demand({ route }: { route: Route }) {
         </div>
         <div className="tile tile-forecast">
           <span className="mono small">SUGGESTED BATCH</span>
-          <strong>{forecast}</strong>
+          <strong>
+            <CountUp value={forecast} />
+          </strong>
           <span className="small">
             confirmed + {pct(rate)} of requests
           </span>
@@ -100,12 +106,11 @@ export function Demand({ route }: { route: Route }) {
           <tbody>
             {d.byProduct.map(({ productId, bottles: b }) => {
               const paid = b.paid + b.fulfilled
-              const p = PRODUCTS.find((x) => x.id === productId)
               return (
                 <tr key={productId}>
                   <td>
                     <span className="flav">
-                      {p && <Bottle colour={p.colour} size={28} />}
+                      <FlavourDot id={productId} />
                       {productName(productId)}
                     </span>
                   </td>

@@ -1,10 +1,10 @@
 import { batchFromId, formatShort, pastBatches } from '../../domain/batches'
 import { cancellationRate, pct, repeatOrderRate, weeklyRows } from '../../domain/metrics'
 import { SampleTag } from '../../components/ui'
-import { useStore } from '../../store'
+import { useStaff } from '../../staff/StaffProvider'
 
 export function Results() {
-  const { state, now } = useStore()
+  const { state, now } = useStaff()
   const ids = pastBatches(now, 6)
     .map((b) => b.id)
     .reverse()

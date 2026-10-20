@@ -1,37 +1,43 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { formatCutoff, formatDay, openBatches } from '../../domain/batches'
 import { bottles, formatOrderNumber, isValidPhone } from '../../domain/orders'
-import { DELIVERY_AREAS, PICKUP_POINTS, PRODUCTS } from '../../domain/seed'
+import { DELIVERY_AREAS, PICKUP_POINTS, PRODUCTS } from '../../domain/catalog'
 import type { Fulfilment, Source } from '../../domain/types'
-import { Bottle, Stepper } from '../../components/ui'
+import { ProductThumb, Stepper } from '../../components/ui'
 import { campaignSource, navigate, type Route } from '../../router'
-import { useStore } from '../../store'
+import { useShop } from '../../shop/ShopProvider'
 
 export function OrderForm({ route }: { route: Route }) {
-  const { state, now, meCustomer, placeOrder } = useStore()
+  const { orders, now, me, placeOrder, basket, setBasketQty, clearBasket } = useShop()
   const batches = openBatches(now, 3)
-  const from = state.orders.find((o) => o.id === route.query.get('from'))
+  const from = orders.find((o) => o.id === route.query.get('from'))
   const viaReminder = route.query.get('src') === 'reminder'
 
   const [batchId, setBatchId] = useState(() => {
     const q = route.query.get('batch')
     return batches.some((b) => b.id === q) ? q! : batches[0].id
   })
-  const [qty, setQty] = useState<Record<string, number>>(() => {
-    const init: Record<string, number> = {}
+  // A repeat order starts from the copied order; otherwise from what was picked on the menu.
+  const [qty, setQtyState] = useState<Record<string, number>>(() => {
+    const init: Record<string, number> = from ? {} : { ...basket }
     from?.lines.forEach((l) => (init[l.productId] = l.qty))
     const add = route.query.get('add')
-    if (add && !from) init[add] = 1
+    if (add && !from && !init[add]) init[add] = 1
     return init
   })
+  const setQty = (next: Record<string, number>) => {
+    setQtyState(next)
+    if (!from) Object.keys({ ...qty, ...next }).forEach((id) => setBasketQty(id, next[id] ?? 0))
+  }
   const [fulfilment, setFulfilment] = useState<Fulfilment>(from?.fulfilment ?? 'pickup')
   const [location, setLocation] = useState(from?.location ?? '')
-  const [name, setName] = useState(meCustomer?.name ?? '')
-  const [phone, setPhone] = useState(meCustomer?.phone ?? '')
-  const [optIn, setOptIn] = useState(meCustomer?.remindersOptIn ?? false)
-  const [channel, setChannel] = useState<'whatsapp' | 'sms'>(meCustomer?.reminderChannel ?? 'whatsapp')
+  const [name, setName] = useState(me?.name ?? '')
+  const [phone, setPhone] = useState(me?.phone ?? '')
+  const [optIn, setOptIn] = useState(me?.remindersOptIn ?? false)
   const [note, setNote] = useState('')
   const [tried, setTried] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [serverError, setServerError] = useState('')
 
   const lines = PRODUCTS.map((p) => ({ productId: p.id, qty: qty[p.id] ?? 0 })).filter((l) => l.qty > 0)
   const total = bottles(lines)
@@ -39,37 +45,33 @@ export function OrderForm({ route }: { route: Route }) {
   const batch = batches.find((b) => b.id === batchId)!
 
   const existing = useMemo(
-    () => meCustomer && state.orders.find((o) => o.customerId === meCustomer.id && o.batchId === batchId && o.status !== 'cancelled'),
-    [state.orders, meCustomer, batchId],
+    () => orders.find((o) => o.batchId === batchId && o.status !== 'cancelled'),
+    [orders, batchId],
   )
 
   const errors = {
-    lines: total === 0 ? 'Choose at least one bottle.' : '',
-    location: locations.includes(location) ? '' : fulfilment === 'pickup' ? 'Choose a pickup point.' : 'Choose a delivery area.',
-    name: name.trim().length < 2 ? 'Add your name so GoodCane knows who the order is for.' : '',
-    phone: isValidPhone(phone) ? '' : 'Enter a 10-digit number, e.g. 024 123 4567.',
+    lines: total === 0 ? 'Add at least one bottle.' : '',
+    location: locations.includes(location) ? '' : fulfilment === 'pickup' ? 'Choose where you\'ll pick up.' : 'Choose your area.',
+    name: name.trim().length < 2 ? 'We need a name for the order.' : '',
+    phone: isValidPhone(phone) ? '' : 'Enter a 10-digit number, like 024 123 4567.',
   }
   const valid = Object.values(errors).every((e) => !e)
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
     setTried(true)
-    if (!valid) return
+    if (!valid || busy) return
+    setBusy(true)
+    setServerError('')
     const source: Source = from ? (viaReminder ? 'reminder' : 'reorder') : campaignSource()
-    const order = placeOrder({
-      name,
-      phone,
-      batchId,
-      lines,
-      fulfilment,
-      location,
-      note,
-      remindersOptIn: optIn,
-      reminderChannel: channel,
-      source,
-      reorderOf: from?.id,
-    })
-    navigate(`/receipt/${order.id}?new=1`)
+    try {
+      const order = await placeOrder({ name, phone, batchId, lines, fulfilment, location, note, remindersOptIn: optIn, source, reorderOf: from?.id })
+      if (!from) clearBasket()
+      navigate(`/receipt/${order.id}?new=1`)
+    } catch (err) {
+      setServerError((err as Error).message)
+      setBusy(false)
+    }
   }
 
   const err = (k: keyof typeof errors) => (tried && errors[k] ? <p className="error">{errors[k]}</p> : null)
@@ -79,20 +81,16 @@ export function OrderForm({ route }: { route: Route }) {
       <header>
         {from ? (
           <>
-            <p className="eyebrow mono">Same again? · copied {formatOrderNumber(from.number)}</p>
-            <h1>Your usual, ready to go</h1>
-            <p className="small">Change anything you like, then send.</p>
+            <h1>Order again</h1>
+            <p className="small muted">We've copied order {formatOrderNumber(from.number)}. Change anything you like.</p>
           </>
         ) : (
-          <>
-            <p className="eyebrow mono">Pre-order</p>
-            <h1>Reserve your bottles</h1>
-          </>
+          <h1>Your order</h1>
         )}
       </header>
 
       <fieldset>
-        <legend>1. Which batch?</legend>
+        <legend>Which Saturday?</legend>
         <div className="chips">
           {batches.map((b) => (
             <label key={b.id} className={`chip ${b.id === batchId ? 'on' : ''}`}>
@@ -104,28 +102,30 @@ export function OrderForm({ route }: { route: Route }) {
         </div>
         {existing && (
           <p className="notice small">
-            You already have {formatOrderNumber(existing.number)} for this batch. This will be an extra order.
+            You already have order {formatOrderNumber(existing.number)} for this day. This one will be separate.
           </p>
         )}
       </fieldset>
 
       <fieldset>
-        <legend>2. Flavours</legend>
+        <legend>Juices</legend>
         <ul className="pick-list">
           {PRODUCTS.map((p) => (
-            <li key={p.id} className={qty[p.id] ? 'on' : ''}>
-              <Bottle colour={p.colour} size={44} />
-              <span className="pick-name">{p.name}</span>
+            <li key={p.id} className={qty[p.id] ? 'on' : ''} style={{ ['--accent' as string]: p.accent }}>
+              <ProductThumb product={p} size={52} />
+              <span className="pick-name">
+                {p.short}
+                <span className="small muted">Sugarcane juice</span>
+              </span>
               <Stepper label={p.name} value={qty[p.id] ?? 0} onChange={(n) => setQty({ ...qty, [p.id]: n })} />
             </li>
           ))}
         </ul>
-        <p className="small muted">Bottle size and price to be confirmed by GoodCane.</p>
         {err('lines')}
       </fieldset>
 
       <fieldset>
-        <legend>3. Pickup or delivery</legend>
+        <legend>Pickup or delivery</legend>
         <div className="segmented">
           {(['pickup', 'delivery'] as const).map((f) => (
             <label key={f} className={fulfilment === f ? 'on' : ''}>
@@ -143,7 +143,7 @@ export function OrderForm({ route }: { route: Route }) {
           ))}
         </div>
         <label className="field">
-          <span>{fulfilment === 'pickup' ? 'Pickup point' : 'Delivery area'}</span>
+          <span>{fulfilment === 'pickup' ? 'Pick up from' : 'Area'}</span>
           <select value={location} onChange={(e) => setLocation(e.target.value)}>
             <option value="">Choose…</option>
             {locations.map((l) => (
@@ -152,21 +152,22 @@ export function OrderForm({ route }: { route: Route }) {
           </select>
         </label>
         {err('location')}
-        {fulfilment === 'delivery' && <p className="small muted">GoodCane will ask for the exact address on WhatsApp — we don't store it here.</p>}
+        {fulfilment === 'delivery' && <p className="small muted">We'll call or text for the exact address.</p>}
       </fieldset>
 
       <fieldset>
-        <legend>4. Your details</legend>
+        <legend>Your details</legend>
         <label className="field">
           <span>Name</span>
           <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" />
         </label>
         {err('name')}
         <label className="field">
-          <span>WhatsApp / phone number</span>
+          <span>Phone number</span>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="024 123 4567" />
         </label>
         {err('phone')}
+        <p className="small muted">We'll text your order number here, and let you know when it's confirmed.</p>
         <label className="field">
           <span>
             Note <span className="muted">(optional)</span>
@@ -176,33 +177,25 @@ export function OrderForm({ route }: { route: Route }) {
 
         <label className="check">
           <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} />
-          <span>
-            <strong>Remind me before next week's cutoff.</strong> One message a week at most. Turn off any time.
-          </span>
+          <span>Text me a reminder before orders close each week. You can stop these any time.</span>
         </label>
-        {optIn && (
-          <div className="segmented small-seg">
-            {(['whatsapp', 'sms'] as const).map((c) => (
-              <label key={c} className={channel === c ? 'on' : ''}>
-                <input type="radio" name="channel" checked={channel === c} onChange={() => setChannel(c)} />
-                {c === 'whatsapp' ? 'WhatsApp' : 'SMS'}
-              </label>
-            ))}
-          </div>
-        )}
-        <p className="small muted">We only use your name and number to confirm this order{optIn ? ' and send your reminder' : ''}.</p>
       </fieldset>
 
+      {serverError && (
+        <p className="error" role="alert">
+          {serverError}
+        </p>
+      )}
       <div className="sticky-bar">
         <div>
           <strong>
             {total} bottle{total === 1 ? '' : 's'}
           </strong>
-          <span className="small"> · {formatDay(batch.productionDate)}</span>
-          <p className="small muted">No payment now — GoodCane confirms first.</p>
+          <span className="small"> for {formatDay(batch.productionDate)}</span>
+          <p className="small muted">Pay after we confirm.</p>
         </div>
-        <button className="btn btn-primary" type="submit">
-          Send pre-order
+        <button className="btn btn-primary" type="submit" disabled={busy}>
+          {busy ? 'Placing…' : 'Place order'}
         </button>
       </div>
     </form>

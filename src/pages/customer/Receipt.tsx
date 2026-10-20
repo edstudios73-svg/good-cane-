@@ -1,78 +1,112 @@
+import { useEffect, useState } from 'react'
 import { batchFromId, formatCutoff, formatDay } from '../../domain/batches'
 import { bottles, canCustomerCancel, formatOrderNumber } from '../../domain/orders'
-import type { Order, OrderStatus } from '../../domain/types'
+import { maskPhone } from '../../domain/sms'
+import type { Order, OrderStatus, SmsLog } from '../../domain/types'
 import { LinesList, StatusPill } from '../../components/ui'
 import { href, type Route } from '../../router'
-import { useStore } from '../../store'
+import { useShop } from '../../shop/ShopProvider'
 import { reorderBatch } from './reorder'
 
 const STEPS: { status: OrderStatus; label: string }[] = [
-  { status: 'requested', label: 'Requested' },
+  { status: 'requested', label: 'Received' },
   { status: 'confirmed', label: 'Confirmed' },
   { status: 'paid', label: 'Paid' },
-  { status: 'fulfilled', label: 'Delivered' },
+  { status: 'fulfilled', label: 'Collected' },
 ]
 
 const EXPLAIN: Record<OrderStatus, string> = {
-  requested: "Your request is in. It isn't confirmed or paid yet — GoodCane will message you on WhatsApp to confirm and arrange payment.",
-  confirmed: 'GoodCane has confirmed your bottles for this batch. Payment is arranged directly with GoodCane.',
-  paid: "Paid and reserved. We'll see you on batch day.",
-  fulfilled: 'Delivered. Enjoy! Order the same again in one tap below.',
-  cancelled: 'This order was cancelled. Nothing is owed.',
+  requested: "We've got your order but haven't confirmed it yet. You'll get a text once we do, and that's when you pay.",
+  confirmed: "Your bottles are set aside. We'll be in touch about payment.",
+  paid: 'All paid. See you on the day.',
+  fulfilled: 'Enjoy! You can order the same again below.',
+  cancelled: 'This order was cancelled. You owe nothing.',
 }
 
-function reached(order: Order, s: OrderStatus): boolean {
-  return order.history.some((h) => h.status === s)
+const reached = (order: Order, s: OrderStatus) => order.history.some((h) => h.status === s)
+
+function smsLine(m: SmsLog | undefined): string | null {
+  if (!m || !m.to) return null
+  const to = maskPhone(m.to)
+  if (m.status === 'sent') return `Order number texted to ${to}.`
+  if (m.status === 'queued') return `Texting your order number to ${to}…`
+  return `We couldn't text ${to}, so keep this page for your order number.`
 }
 
 export function Receipt({ id, route }: { id: string; route: Route }) {
-  const { state, now, meCustomer, customerCancel, setReminders } = useStore()
-  const order = state.orders.find((o) => o.id === id)
-  if (!order) {
+  const { now, me, orders, loadOrder, cancelOrder, setReminders } = useShop()
+  const [data, setData] = useState<{ order: Order; sms: SmsLog[] } | null | undefined>(undefined)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let live = true
+    const load = () => loadOrder(id).then((d) => live && setData(d)).catch(() => live && setData(null))
+    void load()
+    // The SMS provider answers a moment later; check once more for the delivery result.
+    const t = setTimeout(load, 4000)
+    return () => {
+      live = false
+      clearTimeout(t)
+    }
+  }, [id, loadOrder])
+
+  if (data === undefined) return <p className="small muted">Loading your order…</p>
+  if (!data) {
     return (
       <div className="card">
-        <p>We couldn't find that order on this device.</p>
-        <a href={href('/orders')}>Find my orders</a>
+        <p>We couldn't find that order on this phone.</p>
+        <a href={href('/orders')}>Sign in to see your orders</a>
       </div>
     )
   }
+
+  const { order } = data
   const batch = batchFromId(order.batchId)
   const isNew = route.query.get('new') === '1'
-  const customer = state.customers.find((c) => c.id === order.customerId)
-  const nextOpen = reorderBatch(state.orders, order.customerId, now)
+  const firstText = data.sms.find((m) => m.kind === 'received')
+  const mine = me && orders.some((o) => o.id === order.id)
+  const nextOpen = reorderBatch(orders, order.customerId, now)
 
-  const cancel = () => {
-    if (confirm(`Cancel ${formatOrderNumber(order.number)}? Nothing has been charged.`)) customerCancel(order.id)
+  const cancel = async () => {
+    if (!confirm(`Cancel order ${formatOrderNumber(order.number)}?`)) return
+    setBusy(true)
+    setError('')
+    try {
+      await cancelOrder(order)
+      setData(await loadOrder(order.id))
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
     <div className="stack">
       {isNew && (
         <div className="banner-ok" role="status">
-          <strong>Pre-order sent!</strong> Keep this receipt — you can find it again under "My orders".
+          <span>
+            <strong>Thanks{me ? `, ${me.name.split(' ')[0]}` : ''}.</strong> Your order number is {formatOrderNumber(order.number)}.
+          </span>
         </div>
       )}
 
       <article className="receipt">
         <div className="receipt-head">
-          <span className="mono">GOODCANE · PRE-ORDER</span>
-          <span className="mono">{formatOrderNumber(order.number)}</span>
+          <span className="mono">Order {formatOrderNumber(order.number)}</span>
+          <StatusPill status={order.status} customer />
         </div>
-        <p className="mono small">
-          BATCH {formatDay(batch.productionDate).toUpperCase()} · {order.fulfilment === 'pickup' ? 'PICKUP' : 'DELIVERY'}
+        <p className="small muted">
+          {formatDay(batch.productionDate)} · {order.fulfilment === 'pickup' ? 'Pickup' : 'Delivery'} · {order.location}
         </p>
-        <p className="small">{order.location}</p>
         <hr />
         <LinesList lines={order.lines} />
-        <div className="lines-total mono">
-          <span>BOTTLES</span>
+        <div className="lines-total">
+          <span>Bottles</span>
           <span>{bottles(order.lines)}</span>
         </div>
         <hr />
-        <div className="receipt-status">
-          <span className="mono small">STATUS</span>
-          <StatusPill status={order.status} />
-        </div>
         {order.status !== 'cancelled' && (
           <ol className="timeline" aria-label="Order progress">
             {STEPS.map((s) => (
@@ -83,31 +117,33 @@ export function Receipt({ id, route }: { id: string; route: Route }) {
           </ol>
         )}
         <p className="small">{EXPLAIN[order.status]}</p>
-        {order.note && <p className="small muted">Note: {order.note}</p>}
-        <div className="barcode" aria-hidden="true" />
+        {order.note && <p className="small muted">Your note: {order.note}</p>}
+        {smsLine(firstText) && <p className="sms-line small">{smsLine(firstText)}</p>}
       </article>
 
+      {error && <p className="error">{error}</p>}
       {canCustomerCancel(order, now) && (
-        <button className="btn btn-ghost btn-block" onClick={cancel}>
-          Cancel this order
-        </button>
+        <>
+          <button className="btn btn-ghost btn-block" onClick={() => void cancel()} disabled={busy}>
+            {busy ? 'Cancelling…' : 'Cancel order'}
+          </button>
+          <p className="small muted center">You can cancel until {formatCutoff(batch.cutoff)}.</p>
+        </>
       )}
-      {canCustomerCancel(order, now) && <p className="small muted center">You can cancel until {formatCutoff(batch.cutoff)}.</p>}
 
-      {isNew && customer && !customer.remindersOptIn && (
+      {isNew && me && !me.remindersOptIn && (
         <section className="card">
-          <h2>Want a nudge next week?</h2>
-          <p className="small">One WhatsApp message before the cutoff with a "Same again?" link. Turn off any time.</p>
-          <button className="btn btn-primary btn-block" onClick={() => setReminders(customer.id, true, 'whatsapp')}>
-            Yes, remind me
+          <h2>Want a reminder next week?</h2>
+          <p className="small muted">One text before orders close. Stop any time.</p>
+          <button className="btn btn-primary btn-block" onClick={() => void setReminders(true)}>
+            Yes, text me
           </button>
         </section>
       )}
-      {isNew && customer?.remindersOptIn && <p className="small center">✓ Reminders on. Change this any time in My orders.</p>}
 
-      {order.status !== 'cancelled' && meCustomer?.id === order.customerId && !isNew && (
-        <a className="btn btn-pink btn-block" href={href(`/order?from=${order.id}&batch=${nextOpen.id}`)}>
-          Same again for {formatDay(nextOpen.productionDate)}
+      {order.status !== 'cancelled' && mine && !isNew && (
+        <a className="btn btn-primary btn-block" href={href(`/order?from=${order.id}&batch=${nextOpen.id}`)}>
+          Order this again for {formatDay(nextOpen.productionDate)}
         </a>
       )}
       <a className="btn btn-ghost btn-block" href={href('/orders')}>

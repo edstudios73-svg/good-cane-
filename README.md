@@ -1,31 +1,48 @@
-# GoodCane Weekly Pre-order
+# GoodCane pre-orders
 
-A mobile-first prototype that helps GoodCane turn social-media interest into **repeat orders** and **predictable weekly demand**. Built for the CODED × GoodCane Virtual Paid Gig (EP11).
+Weekly pre-ordering for GoodCane's fresh sugarcane juice. Customers order for the next Saturday, get their order number and status by SMS, and reorder in one tap. GoodCane staff see confirmed vs pending demand per flavour and how many bottles to press.
 
-> **Prototype.** All customers, orders and sales are labelled sample data. No live payments, no messages sent. Not an official GoodCane service.
+- **Shop:** `/`
+- **Staff dashboard:** `/admin/` (Supabase email login, staff only)
 
-- **Customers:** pre-order the next weekly batch before the cutoff, track the status (Requested → Confirmed → Paid → Delivered), cancel before the cutoff, and reorder with **"Same again?"**. Reminders are opt-in.
-- **GoodCane team:** confirmed vs requested bottles per flavour, a suggested batch size, order actions, reminder previews (sending disabled), and the four pilot measures.
+Docs: [write-up](docs/WRITEUP.md) · [measurement and pilot plan](docs/MEASUREMENT.md) · [demo video script](docs/VIDEO_SCRIPT.md)
 
-## Docs
-- [Written explanation: problem, assumptions, approach, rollout](docs/WRITEUP.md)
-- [Measurement and pilot plan](docs/MEASUREMENT.md)
-- [Demo video script](docs/VIDEO_SCRIPT.md)
+## Stack
 
-## Run it
+- Vite + React + TypeScript. Two pages: `index.html` (shop) and `admin/index.html` (staff).
+- Supabase Postgres for orders, customers and the SMS log.
+  - Customers never touch tables directly. They call the security-definer functions in [`supabase/migrations`](supabase/migrations), which validate every order.
+  - Row-level security gives staff read access.
+  - Realtime pushes new orders to the dashboard.
+- SMS through [Arkesel](https://arkesel.com), sent from the database with `pg_net`. The API key lives in Supabase Vault and never reaches the browser.
+
+## Set up
+
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm test         # domain tests (batches, order lifecycle, demand, metrics, reminders)
-npm run build    # static site in dist/
+cp .env.example .env.local     # add your Supabase URL and publishable key
+npm run dev
+npm test
 ```
-Demo tips:
-- The **GoodCane team** switch in the header opens the business view.
-- Sample customers use the numbers `0000000001` to `0000000016` in "My orders".
-- **Reset demo data** restores the sample set.
-- Add `?src=tiktok` to the URL to tag orders with their channel.
 
-## How it's built
-- Vite + React + TypeScript with a hash router, so it deploys as a static site to any host.
-- `src/domain/` holds the business logic (batch schedule, order lifecycle, demand and forecast, metrics, reminders), and that's the code the tests cover.
-- State is stored in the browser's `localStorage`. The customer and business views share it on one device and stay in sync across tabs. A pilot would swap this for a hosted database (see the rollout plan).
+Database:
+1. Apply `supabase/migrations/*.sql` to the project.
+2. Optional: load the sample history with `supabase/sample-data.sql`. Those rows are flagged `is_sample` and never texted.
+3. Store the Arkesel key in Vault:
+   ```sql
+   select vault.create_secret('<arkesel api key>', 'arkesel_api_key');
+   update settings set value = 'GoodCane' where key = 'sms_sender';  -- your approved sender ID
+   ```
+4. Add a staff member: create the user in Supabase Auth, then
+   ```sql
+   insert into staff (user_id, name) select id, 'Name' from auth.users where email = 'person@example.com';
+   ```
+
+Sending can be paused at any time with `update settings set value = 'false' where key = 'sms_live';`.
+
+## Layout
+
+- `src/domain/`: batch schedule, order rules, demand forecast, metrics, SMS wording (tested)
+- `src/shop/`, `src/pages/customer/`: the shop
+- `src/staff/`, `src/pages/business/`: the staff dashboard
+- `scripts/sample-data.ts`: generates the sample history SQL

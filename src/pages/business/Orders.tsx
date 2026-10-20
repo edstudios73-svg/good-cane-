@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { batchFromId, formatDay } from '../../domain/batches'
 import { STATUS_LABEL, bottles, businessActions, formatOrderNumber } from '../../domain/orders'
 import type { Order, OrderStatus } from '../../domain/types'
 import { LinesList, SampleTag, StatusPill } from '../../components/ui'
 import { navigate, type Route } from '../../router'
-import { useStore } from '../../store'
+import { useStaff } from '../../staff/StaffProvider'
 import { BatchPicker, useBatchOptions } from './BatchPicker'
 
 const ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
@@ -25,28 +26,35 @@ const SOURCE_LABEL: Record<Order['source'], string> = {
 }
 
 export function Orders({ route }: { route: Route }) {
-  const { state, businessMove } = useStore()
+  const { state, businessMove } = useStaff()
+  const [notify, setNotify] = useState(true)
   const options = useBatchOptions()
   const qb = route.query.get('batch')
   const batchId = qb === 'all' || options.some((b) => b.id === qb) ? qb! : options[0].id
   const qs = route.query.get('status') as OrderStatus | 'all' | null
   const status = qs && FILTERS.includes(qs) ? qs : 'all'
 
-  const set = (b: string, s: string) => navigate(`/business/orders?batch=${b}&status=${s}`)
+  const set = (b: string, s: string) => navigate(`/orders?batch=${b}&status=${s}`)
 
   const list = state.orders
     .filter((o) => (batchId === 'all' || o.batchId === batchId) && (status === 'all' || o.status === status))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
-  const act = (o: Order, to: OrderStatus) => {
+  const [busy, setBusy] = useState<string | null>(null)
+  const act = async (o: Order, to: OrderStatus) => {
+    let note: string | undefined
     if (to === 'cancelled') {
-      const reason = prompt(`Reason for cancelling ${formatOrderNumber(o.number)}? (shared with the customer)`, 'Sold out for this batch')
+      const reason = prompt(`Reason for cancelling ${formatOrderNumber(o.number)}? The customer gets a text.`, 'Sold out for this batch')
       if (reason === null) return
-      businessMove(o.id, to, reason || undefined)
-    } else if (to === 'paid') {
-      if (confirm(`Record that ${formatOrderNumber(o.number)} has been paid? (Payment is taken outside this app.)`)) businessMove(o.id, to)
-    } else {
-      businessMove(o.id, to)
+      note = reason || undefined
+    } else if (to === 'paid' && !confirm(`Mark ${formatOrderNumber(o.number)} as paid?`)) return
+    setBusy(o.id)
+    try {
+      await businessMove(o.id, to, note, notify)
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -54,7 +62,10 @@ export function Orders({ route }: { route: Route }) {
     <div className="stack">
       <div className="row-between wrap">
         <BatchPicker value={batchId} onChange={(b) => set(b, status)} allowAll />
-        <SampleTag />
+        <label className="check inline-check small">
+          <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+          <span>Text the customer when I change an order</span>
+        </label>
       </div>
       <div className="chips scroll" role="tablist" aria-label="Filter by status">
         {FILTERS.map((f) => (
@@ -97,7 +108,7 @@ export function Orders({ route }: { route: Route }) {
               {businessActions(o).length > 0 && (
                 <div className="actions">
                   {businessActions(o).map((to) => (
-                    <button key={to} className={`btn btn-sm ${to === 'cancelled' ? 'btn-ghost' : 'btn-primary'}`} onClick={() => act(o, to)}>
+                    <button key={to} className={`btn btn-sm ${to === 'cancelled' ? 'btn-ghost' : 'btn-primary'}`} disabled={busy === o.id} onClick={() => void act(o, to)}>
                       {ACTION_LABEL[to]}
                     </button>
                   ))}

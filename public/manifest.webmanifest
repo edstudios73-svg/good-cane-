@@ -1,0 +1,9 @@
+{
+  "name": "GoodCane Pre-order",
+  "short_name": "GoodCane",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [{ "src": "/img/logo.png", "sizes": "256x256", "type": "image/png" }]
+}

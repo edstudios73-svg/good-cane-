@@ -1,6 +1,6 @@
 # Measurement and pilot plan
 
-The prototype calculates all four measures in the **GoodCane team → Results** tab. The numbers shown there come from sample history.
+The staff dashboard calculates all four measures in the **Results** tab (`/admin/`). Until real orders build up, the numbers there come from labelled sample history.
 
 ## The four measures
 
@@ -13,7 +13,7 @@ The prototype calculates all four measures in the **GoodCane team → Results** 
 
 Supporting signals, all already captured in the data:
 - **Source of first orders:** TikTok, Instagram, WhatsApp or direct, from `?src=`. Shows which channel turns discovery into orders.
-- **Reorder share:** orders created through "Same again?" or a reminder link (`source = reorder | reminder`).
+- **Reorder share:** orders created through "Order this again" or a reminder text (`source = reorder | reminder`).
 - **Reminder opt-in rate and opt-outs:** whether customers want reminders at all.
 - **Request → confirmed rate:** feeds the forecast, and shows whether GoodCane can confirm everything people ask for.
 - **Waste:** bottles made − bottles sold, the real cost the forecast aims to reduce.
@@ -50,7 +50,7 @@ Pre-orders don't cover walk-ins, so we also track *pre-order share of sales*, i.
 **What we'd learn even if targets are missed:**
 - **Low pre-orders but high walk-ins:** people prefer spontaneous buying, so focus on stock alerts instead.
 - **High cancellations:** the cutoff is too early or the confirmation is too slow.
-- **Low reminder opt-in:** remove reminders and rely on "Same again?" from WhatsApp Status.
+- **Low reminder opt-in:** remove reminders and rely on "Order this again" and WhatsApp Status.
 
 **Feedback:** a 3-question WhatsApp check-in at week 2 and week 4:
 1. Was ordering easy?

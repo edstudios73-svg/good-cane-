@@ -4,7 +4,7 @@ import { demandForBatch, forecastBottles, historicalConfirmRate } from './demand
 import { cancellationRate, forecastAccuracy, repeatOrderRate, weeklyRows } from './metrics'
 import { canCustomerCancel, isValidPhone, normalisePhone, transition } from './orders'
 import { remindersDue } from './reminders'
-import { PRODUCTS, createSeedState } from './seed'
+import { PRODUCTS } from './catalog'
 import type { Customer, Order, OrderStatus } from './types'
 
 // Tuesday 20 Oct 2026, 10:00 local. Next batch: Sat 24 Oct, cutoff Thu 22 Oct 18:00.
@@ -163,28 +163,5 @@ describe('reminders', () => {
       order({ status: 'cancelled', customerId: 'in-cancelled', batchId: '2026-10-24' }),
     ]
     expect(remindersDue(customers, orders, '2026-10-24').map((x) => x.id)).toEqual(['in-no-order', 'in-cancelled'])
-  })
-})
-
-describe('seed data', () => {
-  const s = createSeedState(NOW)
-
-  it('is all labelled sample and uses obviously fake numbers', () => {
-    expect(s.customers.every((c) => c.sample && c.name.startsWith('Sample') && c.phone.startsWith('00000000'))).toBe(true)
-    expect(s.orders.every((o) => o.sample)).toBe(true)
-  })
-
-  it('has history plus a mix of statuses in the next open batch', () => {
-    const next = openBatches(NOW, 1)[0].id
-    const statuses = new Set(s.orders.filter((o) => o.batchId === next).map((o) => o.status))
-    expect(statuses).toEqual(new Set(['requested', 'confirmed', 'paid', 'cancelled']))
-    expect(s.batchRecords.length).toBeGreaterThanOrEqual(5)
-  })
-
-  it('every order history is a valid lifecycle path', () => {
-    for (const o of s.orders) {
-      expect(o.history[0].status).toBe('requested')
-      expect(o.history[o.history.length - 1].status).toBe(o.status)
-    }
   })
 })
