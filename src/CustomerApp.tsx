@@ -15,14 +15,24 @@ import { useShop } from './shop/ShopProvider'
 
 /** Links in reminder texts and "Order this again" land here: fill the basket with the last order. */
 function Repeat({ route }: { route: Route }) {
-  const { orders, me, ready, fillBasket } = useShop()
-  const from = orders.find((o) => o.id === route.query.get('from')) ?? (me ? lastReorderable(orders, me.id) : undefined)
+  const { orders, me, ready, fillBasket, loadOrder } = useShop()
+  const id = route.query.get('from')
   useEffect(() => {
     if (!ready) return
-    if (!from) return navigate('/orders')
-    fillBasket(Object.fromEntries(from.lines.map((l) => [l.productId, l.qty])))
-    navigate(`/cart?from=${from.id}${route.query.get('src') ? `&src=${route.query.get('src')}` : ''}`)
-  }, [ready, from, fillBasket, route])
+    let live = true
+    const go = async () => {
+      // Orders placed on this phone without an account still reorder through their receipt link.
+      const from = orders.find((o) => o.id === id) ?? (id ? (await loadOrder(id).catch(() => null))?.order : undefined) ?? (me ? lastReorderable(orders, me.id) : undefined)
+      if (!live) return
+      if (!from) return navigate('/orders')
+      fillBasket(Object.fromEntries(from.lines.map((l) => [l.productId, l.qty])))
+      navigate(`/cart?from=${from.id}${route.query.get('src') ? `&src=${route.query.get('src')}` : ''}`)
+    }
+    void go()
+    return () => {
+      live = false
+    }
+  }, [ready, id, orders, me, fillBasket, loadOrder, route])
   return null
 }
 
