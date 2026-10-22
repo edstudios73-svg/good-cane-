@@ -9,6 +9,8 @@ export interface Product {
   about: string
   /** Bottle cut out of the photo, on white — sits on `tint` via multiply. */
   bottle: string
+  /** Taste group used by the menu filters. */
+  taste: 'Sour' | 'Sweet' | 'Zesty' | 'Creamy' | 'Pure'
   /** What's in it, as printed on the label. */
   ingredients: string
   description: string

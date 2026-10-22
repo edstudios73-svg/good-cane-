@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { batchFromId, formatDay } from '../../domain/batches'
 import { bottles, formatOrderNumber, isValidPhone } from '../../domain/orders'
-import { LinesList, StatusPill, productName } from '../../components/ui'
+import { LinesList, StatusPill, productById, productName } from '../../components/ui'
 import { href } from '../../router'
 import { useShop } from '../../shop/ShopProvider'
-import { lastReorderable, reorderBatch } from './reorder'
+import { lastReorderable } from './reorder'
 
-function SignIn() {
+export function SignIn({ title = 'My orders' }: { title?: string }) {
   const { requestCode, verifyCode } = useShop()
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
@@ -43,7 +43,7 @@ function SignIn() {
   return (
     <div className="stack">
       <header>
-        <h1>My orders</h1>
+        <h1>{title}</h1>
         <p className="small muted">{sent ? `If ${phone} has ordered with us, a 6-digit code is on its way.` : "We'll text you a code to sign in."}</p>
       </header>
       {!sent ? (
@@ -84,70 +84,61 @@ function SignIn() {
 }
 
 export function MyOrders() {
-  const { ready, orders, now, me, signOut, setReminders, forgetMe } = useShop()
-  if (!ready) return <p className="small muted">Loading…</p>
+  const { ready, orders, me } = useShop()
+  if (!ready) return <p className="empty">Loading…</p>
   if (!me) return <SignIn />
 
   const last = lastReorderable(orders, me.id)
-  const next = reorderBatch(orders, me.id, now)
-  const forget = () => {
-    if (confirm('Remove your name and number from GoodCane? Any unpaid orders that are still open will be cancelled.')) void forgetMe()
-  }
 
   return (
-    <div className="stack">
-      <header>
-        <h1>Hi {me.name.split(' ')[0]}</h1>
-      </header>
+    <div className="orders-page">
+      <div className="page-head">
+        <h1>My orders</h1>
+        <a className="text-btn" href={href('/account')}>
+          {me.name.split(' ')[0]}
+        </a>
+      </div>
 
       {last && (
         <section className="again">
-          <p className="small muted">Your last order, {formatOrderNumber(last.number)}</p>
-          <LinesList lines={last.lines} />
-          <a className="btn btn-primary btn-block" href={href(`/order?from=${last.id}&batch=${next.id}`)}>
-            Order this again for {formatDay(next.productionDate)}
+          <div>
+            <h2>Your usual</h2>
+            <LinesList lines={last.lines} />
+          </div>
+          <a className="pill-btn dark" href={href(`/order?from=${last.id}`)}>
+            Order this again
           </a>
         </section>
       )}
 
-      <section className="card">
-        <h2>Orders</h2>
-        {orders.length === 0 && <p className="small muted">No orders yet.</p>}
-        <ul className="history">
-          {orders.map((o) => (
-            <li key={o.id}>
-              <a href={href(`/receipt/${o.id}`)}>
-                <span className="mono small muted">{formatOrderNumber(o.number)}</span>
-                <span className="history-main">
-                  <span>{o.lines.map((l) => productName(l.productId).replace(' Sugarcane', '')).join(', ')}</span>
-                  <span className="small muted">
-                    {formatDay(batchFromId(o.batchId).productionDate)} · {bottles(o.lines)} bottle{bottles(o.lines) === 1 ? '' : 's'}
+      {orders.length === 0 ? (
+        <p className="empty">No orders yet.</p>
+      ) : (
+        <ul className="order-list">
+          {orders.map((o) => {
+            const first = productById(o.lines[0]?.productId ?? '')
+            return (
+              <li key={o.id}>
+                <a href={href(`/receipt/${o.id}`)} className="order-item">
+                  <span className="cart-thumb" style={{ background: first?.tint }}>
+                    {first && <img src={first.bottle} alt="" />}
                   </span>
-                </span>
-                <StatusPill status={o.status} customer />
-              </a>
-            </li>
-          ))}
+                  <span className="order-item-main">
+                    <strong>
+                      {formatOrderNumber(o.number)} · {formatDay(batchFromId(o.batchId).productionDate)}
+                    </strong>
+                    <span>
+                      {o.lines.map((l) => productName(l.productId).replace(' Sugarcane', '')).join(', ')} · {bottles(o.lines)} bottle
+                      {bottles(o.lines) === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                  <StatusPill status={o.status} customer />
+                </a>
+              </li>
+            )
+          })}
         </ul>
-      </section>
-
-      <section className="card">
-        <h2>Text reminders</h2>
-        <label className="check">
-          <input type="checkbox" checked={me.remindersOptIn} onChange={(e) => void setReminders(e.target.checked)} />
-          <span>Text me before orders close each week. At most one a week.</span>
-        </label>
-        <p className="small muted">Order updates still come by text whatever you choose here.</p>
-      </section>
-
-      <div className="row-between small">
-        <button className="link" onClick={signOut}>
-          Sign out
-        </button>
-        <button className="link danger" onClick={forget}>
-          Remove my details
-        </button>
-      </div>
+      )}
     </div>
   )
 }

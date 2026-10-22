@@ -5,9 +5,15 @@ import type { Product } from './types'
 
 const img = (id: string) => `/img/${id}.webp`
 
+/** Printed on GoodCane's labels; confirm before quoting other sizes. */
+export const BOTTLE_SIZE = '500 ml'
+
+export const TASTES = ['Sour', 'Sweet', 'Zesty', 'Creamy', 'Pure'] as const
+
 export const PRODUCTS: Product[] = [
   {
     id: 'mint-lemon',
+    taste: 'Sour',
     name: 'Mint & Lemon Sugarcane',
     short: 'Mint & Lemon',
     about: 'Fresh mint and lemon pressed with sugarcane. Bright and sour up front, cooling at the end. The one to reach for on a hot afternoon.',
@@ -20,6 +26,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 'passion',
+    taste: 'Sweet',
     name: 'Passion Fruit Sugarcane',
     short: 'Passion Fruit',
     about: 'Ripe passion fruit with raw sugarcane. Sweet, tangy and properly tropical.',
@@ -32,6 +39,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 'lemon-ginger',
+    taste: 'Zesty',
     name: 'Lemon & Ginger Sugarcane',
     short: 'Lemon & Ginger',
     about: 'Lemon and fresh ginger with sugarcane. Zesty first, then a warm ginger kick.',
@@ -44,6 +52,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 'tigernut-coconut',
+    taste: 'Creamy',
     name: 'Tigernut & Coconut Sugarcane',
     short: 'Tigernut & Coconut',
     about: 'Tigernut and coconut blended with sugarcane. Creamy, nutty and smooth, closer to a treat.',
@@ -56,6 +65,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 'raw',
+    taste: 'Pure',
     name: 'Raw Sugarcane',
     short: 'Raw',
     about: 'Nothing but pressed sugarcane. Naturally sweet and light. Just the cane.',

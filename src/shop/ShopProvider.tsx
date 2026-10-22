@@ -1,10 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { errorMessage, supabase } from '../lib/supabase'
 import type { Fulfilment, Me, Order, OrderLine, SmsLog, Source } from '../domain/types'
 
 const TOKEN_KEY = 'goodcane.token'
 const RECENT_KEY = 'goodcane.recent'
 const BASKET_KEY = 'goodcane.basket'
+const FAV_KEY = 'goodcane.favourites'
 
 export type Basket = Record<string, number>
 
@@ -54,6 +55,13 @@ interface Shop {
   basket: Basket
   setBasketQty: (productId: string, qty: number) => void
   clearBasket: () => void
+  /** Replace the basket, e.g. with a past order to repeat it. */
+  fillBasket: (b: Basket) => void
+  favourites: string[]
+  toggleFavourite: (productId: string) => void
+  /** Short confirmation shown at the bottom of the screen. */
+  toast: string | null
+  flash: (message: string) => void
   placeOrder: (o: NewOrder) => Promise<Order>
   /** An order this phone can see: from the account, or one placed here before signing in. */
   loadOrder: (id: string) => Promise<{ order: Order; sms: SmsLog[] } | null>
@@ -74,6 +82,17 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
   const [basket, setBasket] = useState<Basket>(() => read(BASKET_KEY, {}))
   const [now, setNow] = useState(() => new Date())
+  const [favourites, setFavourites] = useState<string[]>(() => read(FAV_KEY, []))
+  const [toast, setToast] = useState<string | null>(null)
+  const toastTimer = useRef<number | null>(null)
+
+  useEffect(() => write(FAV_KEY, favourites), [favourites])
+
+  const flash = useCallback((message: string) => {
+    setToast(message)
+    if (toastTimer.current) window.clearTimeout(toastTimer.current)
+    toastTimer.current = window.setTimeout(() => setToast(null), 2200)
+  }, [])
 
   useEffect(() => write(BASKET_KEY, basket), [basket])
   useEffect(() => write(RECENT_KEY, recent), [recent])
@@ -131,6 +150,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
           return next
         }),
       clearBasket: () => setBasket({}),
+      fillBasket: (b) => setBasket({ ...b }),
+      favourites,
+      toggleFavourite: (id) => setFavourites((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id])),
+      toast,
+      flash,
 
       placeOrder: async (o) => {
         const res = await call<{ order: Order; token: string | null }>('place_order', {
@@ -191,7 +215,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         setRecent({})
       },
     }
-  }, [now, ready, account, basket, token, recent, refresh])
+  }, [now, ready, account, basket, token, recent, refresh, favourites, toast, flash])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
