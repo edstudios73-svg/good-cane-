@@ -73,7 +73,7 @@ button, input, select { font: inherit; color: inherit; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .brand-name { white-space: nowrap; font-weight: 600; font-size: 1.02rem; }
 @media (max-width: 400px) { .brand-name .muted { display: none; } }
-.logo { border-radius: 50%; }
+.logo { display: block; border-radius: 10px; height: auto; }
 .foot { margin-top: 72px; padding-top: 28px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; font-size: .88rem; color: var(--muted); }
 .foot strong { color: var(--ink); font-weight: 600; }
 .foot p { margin-top: 2px; }

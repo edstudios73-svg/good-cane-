@@ -67,8 +67,7 @@ export default function CustomerApp() {
     <div className={`shop ${a ? `shop-${a}` : 'shop-home'}`}>
       <header className="shop-head">
         <a href={href('/')} className="brand" aria-label="GoodCane home">
-          <Logo size={38} />
-          <span className="brand-name">GoodCane</span>
+          <Logo size={42} />
         </a>
         <nav className="head-links" aria-label="Main">
           {TABS.filter((t) => t.label !== 'Search' && t.label !== 'Order').map((t) => (
@@ -109,9 +108,8 @@ export default function CustomerApp() {
         </ul>
         <div className="foot-main">
           <div className="foot-brand">
-            <Logo size={46} />
+            <Logo size={58} />
             <div>
-              <strong>GoodCane</strong>
               <p>Turning Ghana's sugarcane into drinks people love.</p>
             </div>
           </div>

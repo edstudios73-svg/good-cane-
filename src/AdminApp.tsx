@@ -19,8 +19,7 @@ function GateArt() {
   return (
     <aside className="gate-art" aria-hidden="true">
       <div className="gate-brand">
-        <Logo size={44} />
-        <span>GoodCane</span>
+        <Logo size={56} />
       </div>
       <div className="gate-bottles">
         {[PRODUCTS[1], PRODUCTS[0], PRODUCTS[2]].map((p) => (
@@ -130,7 +129,7 @@ export default function AdminApp() {
         <a href={href('/demand')} className="brand">
           <Logo />
           <span className="brand-name">
-            GoodCane <span className="muted">Staff</span>
+            <span className="muted">Staff</span>
           </span>
         </a>
         <div className="row-between">

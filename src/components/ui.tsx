@@ -46,8 +46,9 @@ export function StatusPill({ status, customer }: { status: OrderStatus; customer
   return <span className={`pill pill-${status}`}>{(customer ? CUSTOMER_STATUS_LABEL : STATUS_LABEL)[status]}</span>
 }
 
+/** GoodCane's official wordmark, shown as supplied. `size` is the height. */
 export function Logo({ size = 40 }: { size?: number }) {
-  return <img className="logo" src={`${import.meta.env.BASE_URL}img/logo.png`} alt="GoodCane" width={size} height={size} />
+  return <img className="logo" src={`${import.meta.env.BASE_URL}img/goodcane-logo.jpg`} alt="GoodCane" width={Math.round(size * 1.537)} height={size} />
 }
 
 export function SampleTag({ children = 'Sample data' }: { children?: ReactNode }) {
