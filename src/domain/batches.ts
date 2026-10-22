@@ -70,6 +70,20 @@ const timeFmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-d
 
 const shortFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
 
+const dateFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long' })
+
+/** Customer-facing date without the weekday: "31 October". */
+export function formatDate(d: Date): string {
+  return dateFmt.format(d)
+}
+
+/** Customer-facing closing time: "29 October, 6pm". */
+export function formatClose(d: Date): string {
+  const h = d.getHours()
+  const m = d.getMinutes()
+  return `${dateFmt.format(d)}, ${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h >= 12 ? 'pm' : 'am'}`
+}
+
 export function formatShort(d: Date): string {
   return shortFmt.format(d)
 }

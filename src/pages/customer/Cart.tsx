@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { formatCutoff, formatDay, openBatches } from '../../domain/batches'
+import { formatClose, formatDate, openBatches } from '../../domain/batches'
 import { BOTTLE_SIZE, PRODUCTS } from '../../domain/catalog'
 import type { Product } from '../../domain/types'
 import { TrashIcon } from '../../components/icons'
@@ -93,7 +93,7 @@ export function Cart({ route }: { route: Route }) {
           </div>
           <h2>Nothing here yet</h2>
           <p>
-            Pick a few juices for {formatDay(next.productionDate)}. Orders close {formatCutoff(next.cutoff)}.
+            Pick a few juices for {formatDate(next.productionDate)}. Orders close {formatClose(next.cutoff)}.
           </p>
           <a className="pill-btn dark big" href={href('/')}>
             See the menu
@@ -127,7 +127,7 @@ export function Cart({ route }: { route: Route }) {
             </div>
             <div className="summary-line">
               <span>Next batch</span>
-              <strong>{formatDay(next.productionDate)}</strong>
+              <strong>{formatDate(next.productionDate)}</strong>
             </div>
             <div className="summary-line dashed">
               <span>Payment</span>

@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { formatCutoff, formatDay, openBatches } from '../../domain/batches'
+import { formatClose, formatDate, openBatches } from '../../domain/batches'
 import { bottles, formatOrderNumber, isValidPhone } from '../../domain/orders'
 import { DELIVERY_AREAS, PICKUP_POINTS, PRODUCTS } from '../../domain/catalog'
 import type { Fulfilment, Source } from '../../domain/types'
@@ -84,13 +84,13 @@ export function OrderForm({ route }: { route: Route }) {
       <div className="checkout-grid">
         <div className="checkout-main">
           <section className="panel">
-            <h2>Which Saturday?</h2>
+            <h2>Which batch?</h2>
             <div className="day-chips">
               {batches.map((b) => (
                 <label key={b.id} className={`day-chip ${b.id === batchId ? 'on' : ''}`}>
                   <input type="radio" name="batch" value={b.id} checked={b.id === batchId} onChange={() => setBatchId(b.id)} />
-                  <strong>{formatDay(b.productionDate)}</strong>
-                  <span>order by {formatCutoff(b.cutoff)}</span>
+                  <strong>{formatDate(b.productionDate)}</strong>
+                  <span>orders close {formatClose(b.cutoff)}</span>
                 </label>
               ))}
             </div>
@@ -173,7 +173,7 @@ export function OrderForm({ route }: { route: Route }) {
           </div>
           <div className="summary-line">
             <span>Collect</span>
-            <strong>{formatDay(batch.productionDate)}</strong>
+            <strong>{formatDate(batch.productionDate)}</strong>
           </div>
           <div className="summary-line total">
             <span>Payment</span>

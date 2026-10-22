@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { batchFromId, formatDay } from '../../domain/batches'
+import { batchFromId, formatDate } from '../../domain/batches'
 import { bottles, formatOrderNumber, isValidPhone } from '../../domain/orders'
 import { LinesList, StatusPill, productById, productName } from '../../components/ui'
 import { href } from '../../router'
@@ -125,7 +125,7 @@ export function MyOrders() {
                   </span>
                   <span className="order-item-main">
                     <strong>
-                      {formatOrderNumber(o.number)} · {formatDay(batchFromId(o.batchId).productionDate)}
+                      {formatOrderNumber(o.number)} · {formatDate(batchFromId(o.batchId).productionDate)}
                     </strong>
                     <span>
                       {o.lines.map((l) => productName(l.productId).replace(' Sugarcane', '')).join(', ')} · {bottles(o.lines)} bottle

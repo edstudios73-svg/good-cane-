@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { formatDay, openBatches } from '../../domain/batches'
+import { formatDate, openBatches } from '../../domain/batches'
 import { BOTTLE_SIZE, PRODUCTS, TASTES } from '../../domain/catalog'
 import { BagIcon, BellIcon, ChatIcon, FilterIcon, HeartIcon, SearchIcon, SunIcon } from '../../components/icons'
 import { supabase } from '../../lib/supabase'
@@ -8,8 +8,6 @@ import { href, type Route } from '../../router'
 import { useShop } from '../../shop/ShopProvider'
 import { lastReorderable, reorderBatch } from './reorder'
 
-const weekday = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'long' })
-const hour = (d: Date) => `${d.getHours() % 12 || 12}${d.getHours() >= 12 ? 'pm' : 'am'}`
 
 export function Home({ route }: { route: Route }) {
   const { orders, now, me, basket, setBasketQty, favourites, toggleFavourite, flash } = useShop()
@@ -57,11 +55,14 @@ export function Home({ route }: { route: Route }) {
     <div className="home">
       <section className="home-top">
         <div className="home-title">
-          <h1>
-            Fresh from the cane,
-            <br />
-            every {weekday(next.productionDate)}
-          </h1>
+          <div>
+            <p className="greeting">Akwaaba</p>
+            <h1>
+              Fresh cane juice,
+              <br />
+              pressed just for you
+            </h1>
+          </div>
           <a className="round-btn" href={href('/account')} aria-label="Text reminders">
             <BellIcon />
           </a>
@@ -91,7 +92,7 @@ export function Home({ route }: { route: Route }) {
 
         <a className="promo" href={href('/cart')}>
           <div className="promo-text">
-            <span className="promo-kicker">Next batch · {formatDay(next.productionDate)}</span>
+            <span className="promo-kicker">Next fresh batch · {formatDate(next.productionDate)}</span>
             {reserved != null && reserved > 0 && (
               <span className="reserved">
                 <span className="pulse" aria-hidden="true" />
@@ -99,7 +100,7 @@ export function Home({ route }: { route: Route }) {
               </span>
             )}
             <strong>
-              Order by {weekday(next.cutoff)} {hour(next.cutoff)}. Pay when we confirm.
+              Reserve your bottles now. Pay only when we confirm.
             </strong>
             <span className="promo-row">
               <span className="pill-btn">Order now</span>
@@ -123,7 +124,7 @@ export function Home({ route }: { route: Route }) {
             <LinesList lines={last.lines} />
           </div>
           <a className="pill-btn dark" href={href(`/order?from=${last.id}`)}>
-            Order again for {formatDay(again.productionDate)}
+            Order again for {formatDate(again.productionDate)}
           </a>
         </section>
       )}
@@ -177,8 +178,8 @@ export function Home({ route }: { route: Route }) {
               <BagIcon />
             </span>
             <div>
-              <strong>Order by {weekday(next.cutoff)}</strong>
-              <p>Pick your juices, pickup or delivery. Nothing to pay yet.</p>
+              <strong>Choose your juice</strong>
+              <p>Pick your flavours and how you'd like to get them. No payment upfront.</p>
             </div>
           </li>
           <li>
@@ -186,8 +187,8 @@ export function Home({ route }: { route: Route }) {
               <ChatIcon />
             </span>
             <div>
-              <strong>We confirm by SMS</strong>
-              <p>Your order number arrives straight away, then a text once it's confirmed.</p>
+              <strong>We'll text you</strong>
+              <p>Your order number comes by SMS straight away, and we text again once it's confirmed.</p>
             </div>
           </li>
           <li>
@@ -195,8 +196,8 @@ export function Home({ route }: { route: Route }) {
               <SunIcon />
             </span>
             <div>
-              <strong>Fresh on {weekday(next.productionDate)}</strong>
-              <p>Pressed that morning. We text you when it's ready. Same again next week in one tap.</p>
+              <strong>Pressed fresh for you</strong>
+              <p>Squeezed on the day, never stored. Loved it? Order the same again in one tap.</p>
             </div>
           </li>
         </ol>

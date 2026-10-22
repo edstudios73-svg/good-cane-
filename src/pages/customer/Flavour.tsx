@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { formatCutoff, formatDay, openBatches } from '../../domain/batches'
+import { formatClose, formatDate, openBatches } from '../../domain/batches'
 import { BOTTLE_SIZE, PRODUCTS } from '../../domain/catalog'
 import { ArrowsIcon, BackIcon, HeartIcon, ShareIcon } from '../../components/icons'
 import { Stepper } from '../../components/ui'
@@ -132,7 +132,7 @@ export function Flavour({ id }: { id: string }) {
             </button>
           </div>
           <p className="fine">
-            {inOrder > 0 ? `${inOrder} in your order · ` : ''}For {formatDay(next.productionDate)}, order by {formatCutoff(next.cutoff)}. Price confirmed by SMS.
+            {inOrder > 0 ? `${inOrder} in your order · ` : ''}For {formatDate(next.productionDate)}, orders close {formatClose(next.cutoff)}. Price confirmed by SMS.
           </p>
           {inOrder > 0 && (
             <a className="link" href={href('/cart')}>

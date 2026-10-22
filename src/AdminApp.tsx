@@ -28,7 +28,7 @@ function GateArt() {
       </div>
       <div className="gate-copy">
         <p className="gate-kicker">Staff room</p>
-        <h2>Know Saturday's batch before the cane is cut.</h2>
+        <h2>Know exactly what to press, before the cane is cut.</h2>
         <ul>
           <li>Live orders and demand</li>
           <li>Texts that send themselves</li>

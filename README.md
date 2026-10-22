@@ -5,6 +5,8 @@ Weekly pre-ordering for GoodCane's fresh sugarcane juice. Customers order for th
 - **Shop:** `/`
 - **Staff dashboard:** `/admin/` (Supabase email login, staff only)
 
+**Live demo:** https://goodcane-six.vercel.app · **Staff:** https://goodcane-six.vercel.app/admin (judges: `admin@goodcane.app` / `GoodCane-YmzgvnMyHB`) · **Video:** https://goodcane-six.vercel.app/demo.mp4 · **Submission PDF:** [docs/GoodCane-Submission.pdf](docs/GoodCane-Submission.pdf)
+
 Docs: [write-up](docs/WRITEUP.md) · [measurement and pilot plan](docs/MEASUREMENT.md) · [demo video script](docs/VIDEO_SCRIPT.md)
 
 ## Stack

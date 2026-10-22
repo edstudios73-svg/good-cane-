@@ -2,6 +2,19 @@
 
 > Built for the CODED × GoodCane Virtual Paid Gig (EP11). Orders and texts are live, and the database was reset so it holds only real orders. No payments are connected; GoodCane records payment by hand. Demo video: https://goodcane-six.vercel.app/demo.mp4
 
+## Links and demo access for judges
+
+| | |
+|---|---|
+| **Live shop** | https://goodcane-six.vercel.app |
+| **Staff dashboard** | https://goodcane-six.vercel.app/admin |
+| **Staff login** | Email `admin@goodcane.app` · Password `GoodCane-YmzgvnMyHB` |
+| **Demo video** | https://goodcane-six.vercel.app/demo.mp4 |
+| **Full submission PDF** | https://goodcane-six.vercel.app/GoodCane-Submission.pdf ([in this repo](GoodCane-Submission.pdf)) |
+| **Code** | https://github.com/edstudios73-svg/good-cane- |
+
+The staff login is shared for judging only and will be changed afterwards. To see the full flow: place an order on the shop with your own phone number, then sign in to the dashboard and confirm it. The customer gets a text at each step.
+
 ## 1. The customer problem
 
 GoodCane makes sugarcane juice in **weekly batches** (from its public TikTok posts: Passion fruit, Lemon ginger, Raw sugarcane, Mint lemon, Tigernut coconut). The juice has no preservatives, so it can't sit on a shelf for long. Orders currently come in through WhatsApp and walk-ins.

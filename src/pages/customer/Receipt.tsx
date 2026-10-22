@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { batchFromId, formatCutoff, formatDay } from '../../domain/batches'
+import { batchFromId, formatClose, formatDate } from '../../domain/batches'
 import { bottles, canCustomerCancel, formatOrderNumber } from '../../domain/orders'
 import { maskPhone } from '../../domain/sms'
 import type { Order, OrderStatus, SmsLog } from '../../domain/types'
@@ -98,7 +98,7 @@ export function Receipt({ id, route }: { id: string; route: Route }) {
           <StatusPill status={order.status} customer />
         </div>
         <p className="small muted">
-          {formatDay(batch.productionDate)} · {order.fulfilment === 'pickup' ? 'Pickup' : 'Delivery'} · {order.location}
+          {formatDate(batch.productionDate)} · {order.fulfilment === 'pickup' ? 'Pickup' : 'Delivery'} · {order.location}
         </p>
         <hr />
         <LinesList lines={order.lines} />
@@ -127,7 +127,7 @@ export function Receipt({ id, route }: { id: string; route: Route }) {
           <button className="btn btn-ghost btn-block" onClick={() => void cancel()} disabled={busy}>
             {busy ? 'Cancelling…' : 'Cancel order'}
           </button>
-          <p className="small muted center">You can cancel until {formatCutoff(batch.cutoff)}.</p>
+          <p className="small muted center">You can cancel until {formatClose(batch.cutoff)}.</p>
         </>
       )}
 
@@ -143,7 +143,7 @@ export function Receipt({ id, route }: { id: string; route: Route }) {
 
       {order.status !== 'cancelled' && mine && !isNew && (
         <a className="btn btn-primary btn-block" href={href(`/order?from=${order.id}&batch=${nextOpen.id}`)}>
-          Order this again for {formatDay(nextOpen.productionDate)}
+          Order this again for {formatDate(nextOpen.productionDate)}
         </a>
       )}
       <a className="btn btn-ghost btn-block" href={href('/orders')}>
