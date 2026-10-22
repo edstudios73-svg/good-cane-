@@ -20,7 +20,7 @@ export function Results() {
     <div className="stack">
       <div className="row-between wrap">
         <p className="small">Last {ids.length} batches. These are the pilot's four success measures.</p>
-        <SampleTag>Sample history</SampleTag>
+        {state.orders.some((o) => o.sample) && <SampleTag>Includes sample history</SampleTag>}
       </div>
       <div className="tiles">
         <div className="tile">

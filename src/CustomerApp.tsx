@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BagIcon, HomeIcon, ReceiptIcon, SearchIcon, UserIcon } from './components/icons'
+import { BagIcon, DropIcon, HomeIcon, InstagramIcon, LeafIcon, PinIcon, ReceiptIcon, SearchIcon, SparkIcon, TikTokIcon, UserIcon } from './components/icons'
 import { Logo } from './components/ui'
 import { bottles } from './domain/orders'
 import { Account } from './pages/customer/Account'
@@ -77,18 +77,53 @@ export default function CustomerApp() {
       <main className="shop-main">{page}</main>
 
       <footer className="shop-foot">
-        <div>
-          <strong>GoodCane</strong>
-          <p>Aviation Road, Adenta, Accra</p>
-          <p>No preservatives. No water. No added sugar.</p>
+        <ul className="promises" aria-label="What's in the bottle">
+          <li>
+            <LeafIcon />
+            <span>
+              <strong>No preservatives</strong>Pressed fresh each week
+            </span>
+          </li>
+          <li>
+            <DropIcon />
+            <span>
+              <strong>No water</strong>Just cane and fruit
+            </span>
+          </li>
+          <li>
+            <SparkIcon />
+            <span>
+              <strong>No added sugar</strong>Sweet from the cane
+            </span>
+          </li>
+        </ul>
+        <div className="foot-main">
+          <div className="foot-brand">
+            <Logo size={46} />
+            <div>
+              <strong>GoodCane</strong>
+              <p>Turning Ghana's sugarcane into drinks people love.</p>
+            </div>
+          </div>
+          <div className="socials">
+            <a href="https://www.tiktok.com/@goodcane.co" target="_blank" rel="noreferrer" aria-label="GoodCane on TikTok">
+              <TikTokIcon />
+            </a>
+            <a href="https://www.instagram.com/sugarcanegh/" target="_blank" rel="noreferrer" aria-label="GoodCane on Instagram">
+              <InstagramIcon />
+            </a>
+            <a href="https://maps.google.com/?q=GoodCane+Aviation+Road+Adenta+Accra" target="_blank" rel="noreferrer" aria-label="Find the shop on Google Maps">
+              <PinIcon />
+            </a>
+          </div>
         </div>
-        <div className="foot-links">
-          <a href="https://www.tiktok.com/@goodcane.co" target="_blank" rel="noreferrer">
-            TikTok
-          </a>
-          <a href="https://www.instagram.com/sugarcanegh/" target="_blank" rel="noreferrer">
-            Instagram
-          </a>
+        <div className="foot-bottom">
+          <span>
+            <PinIcon width={15} height={15} /> Aviation Road, Adenta, Accra
+          </span>
+          <span>
+            <a href={href('/orders')}>My orders</a> · <a href={href('/account')}>Reminders</a>
+          </span>
         </div>
       </footer>
 

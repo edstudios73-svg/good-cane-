@@ -16,6 +16,10 @@ interface Staff {
   businessMove: (orderId: string, to: OrderStatus, note?: string, notify?: boolean) => Promise<void>
   sendReminders: (batchId: string) => Promise<number>
   resendSms: (id: string) => Promise<void>
+  /** Automation switches and the staff phone for the daily summary. */
+  settings: Record<string, string>
+  setSetting: (key: string, value: string) => Promise<void>
+  sendSummaryNow: () => Promise<void>
   saveBatchRecord: (r: BatchRecord) => Promise<void>
 }
 
@@ -69,6 +73,7 @@ export function StaffProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isStaff, setIsStaff] = useState<boolean | null>(null)
   const [state, setState] = useState<AppState>(EMPTY)
+  const [settings, setSettings] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [now, setNow] = useState(() => new Date())
 
@@ -88,12 +93,14 @@ export function StaffProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     setLoading(true)
     await supabase.rpc('staff_refresh_sms')
-    const [c, o, b, m] = await Promise.all([
+    const [c, o, b, m, st] = await Promise.all([
       supabase.from('customers').select('*'),
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
       supabase.from('batch_records').select('*'),
       supabase.from('sms_log').select('*').order('created_at', { ascending: false }).limit(500),
+      supabase.rpc('staff_settings'),
     ])
+    if (st.data) setSettings(st.data as Record<string, string>)
     setState({
       customers: (c.data ?? []).map(toCustomer),
       orders: (o.data ?? []).map(toOrder),
@@ -161,6 +168,17 @@ export function StaffProvider({ children }: { children: ReactNode }) {
         await reload()
         return data as number
       },
+      settings,
+      setSetting: async (key, value) => {
+        const { error } = await supabase.rpc('staff_set_setting', { p_key: key, p_value: value })
+        if (error) throw new Error(errorMessage(error))
+        await reload()
+      },
+      sendSummaryNow: async () => {
+        const { error } = await supabase.rpc('staff_send_summary_now')
+        if (error) throw new Error(errorMessage(error))
+        await reload()
+      },
       resendSms: async (id) => {
         const { error } = await supabase.rpc('staff_resend_sms', { p_id: id })
         if (error) throw new Error(errorMessage(error))
@@ -174,7 +192,7 @@ export function StaffProvider({ children }: { children: ReactNode }) {
         await reload()
       },
     }),
-    [session, isStaff, loading, now, state, reload],
+    [session, isStaff, loading, now, state, reload, settings],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

@@ -5,6 +5,7 @@ import { remindersDue } from '../../domain/reminders'
 import { maskPhone, smsBody } from '../../domain/sms'
 import type { SmsKind, SmsStatus } from '../../domain/types'
 import { useStaff } from '../../staff/StaffProvider'
+import { Automations } from './Automations'
 
 const KIND_LABEL: Record<SmsKind, string> = {
   received: 'Order received',
@@ -14,6 +15,8 @@ const KIND_LABEL: Record<SmsKind, string> = {
   cancelled: 'Cancelled',
   reminder: 'Weekly reminder',
   login_code: 'Sign-in code',
+  pickup_day: 'Ready today',
+  daily_summary: 'Daily summary',
 }
 
 const STATUS_LABEL: Record<SmsStatus, string> = {
@@ -40,10 +43,12 @@ export function Messages() {
 
   return (
     <div className="stack">
+      <Automations />
+
       <section className="card">
         <div className="row-between wrap">
           <div>
-            <h2>Weekly reminder · {formatDay(batch.productionDate)}</h2>
+            <h2>Send the reminder now · {formatDay(batch.productionDate)}</h2>
             <p className="small muted">
               Orders close {formatCutoff(batch.cutoff)}. {optedIn} customers have opted in. {due.length} haven't ordered or been reminded yet.
             </p>

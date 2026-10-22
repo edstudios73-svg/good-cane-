@@ -89,7 +89,7 @@ export interface BatchRecord {
   sold?: number
 }
 
-export type SmsKind = 'received' | 'confirmed' | 'paid' | 'fulfilled' | 'cancelled' | 'reminder' | 'login_code'
+export type SmsKind = 'received' | 'confirmed' | 'paid' | 'fulfilled' | 'cancelled' | 'reminder' | 'login_code' | 'pickup_day' | 'daily_summary'
 
 /** skipped = not handed to the provider (sample customer, or SMS not configured). */
 export type SmsStatus = 'queued' | 'sent' | 'failed' | 'skipped'

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatDay, openBatches } from '../../domain/batches'
 import { BOTTLE_SIZE, PRODUCTS, TASTES } from '../../domain/catalog'
-import { BellIcon, FilterIcon, HeartIcon, SearchIcon } from '../../components/icons'
+import { BagIcon, BellIcon, ChatIcon, FilterIcon, HeartIcon, SearchIcon, SunIcon } from '../../components/icons'
+import { supabase } from '../../lib/supabase'
 import { Countdown, LinesList } from '../../components/ui'
 import { href, type Route } from '../../router'
 import { useShop } from '../../shop/ShopProvider'
@@ -19,6 +20,21 @@ export function Home({ route }: { route: Route }) {
   const [taste, setTaste] = useState<string>('All')
   const [onlyFavs, setOnlyFavs] = useState(false)
   const search = useRef<HTMLInputElement>(null)
+  const [reserved, setReserved] = useState<number | null>(null)
+
+  useEffect(() => {
+    let live = true
+    const load = () =>
+      supabase.rpc('batch_reserved', { d: next.id }).then(({ data }) => {
+        if (live && typeof data === 'number') setReserved(data)
+      })
+    void load()
+    const t = setInterval(load, 60_000)
+    return () => {
+      live = false
+      clearInterval(t)
+    }
+  }, [next.id])
 
   useEffect(() => {
     if (route.query.get('search')) search.current?.focus()
@@ -76,6 +92,12 @@ export function Home({ route }: { route: Route }) {
         <a className="promo" href={href('/cart')}>
           <div className="promo-text">
             <span className="promo-kicker">Next batch · {formatDay(next.productionDate)}</span>
+            {reserved != null && reserved > 0 && (
+              <span className="reserved">
+                <span className="pulse" aria-hidden="true" />
+                {reserved} bottle{reserved === 1 ? '' : 's'} reserved so far
+              </span>
+            )}
             <strong>
               Order by {weekday(next.cutoff)} {hour(next.cutoff)}. Pay when we confirm.
             </strong>
@@ -148,18 +170,37 @@ export function Home({ route }: { route: Route }) {
       )}
 
       <section className="how">
-        <div>
-          <strong>Order by {weekday(next.cutoff)}</strong>
-          <p>Pick your juices and pickup or delivery. Nothing to pay yet.</p>
-        </div>
-        <div>
-          <strong>We confirm by SMS</strong>
-          <p>Your order number comes straight away, then a text once it's confirmed.</p>
-        </div>
-        <div>
-          <strong>Collect on {weekday(next.productionDate)}</strong>
-          <p>Pressed that morning. Order the same again in one tap.</p>
-        </div>
+        <h2>How ordering works</h2>
+        <ol>
+          <li>
+            <span className="how-icon">
+              <BagIcon />
+            </span>
+            <div>
+              <strong>Order by {weekday(next.cutoff)}</strong>
+              <p>Pick your juices, pickup or delivery. Nothing to pay yet.</p>
+            </div>
+          </li>
+          <li>
+            <span className="how-icon">
+              <ChatIcon />
+            </span>
+            <div>
+              <strong>We confirm by SMS</strong>
+              <p>Your order number arrives straight away, then a text once it's confirmed.</p>
+            </div>
+          </li>
+          <li>
+            <span className="how-icon">
+              <SunIcon />
+            </span>
+            <div>
+              <strong>Fresh on {weekday(next.productionDate)}</strong>
+              <p>Pressed that morning. We text you when it's ready. Same again next week in one tap.</p>
+            </div>
+          </li>
+        </ol>
+        <p className="how-note">Sizes and prices are confirmed with your order.</p>
       </section>
     </div>
   )

@@ -46,6 +46,10 @@ export function smsBody(kind: SmsKind, ctx: SmsContext): string {
       return `GoodCane: Orders for ${day} close ${cutoffText(ctx.batchId)}. Want your usual? Reply STOP to opt out.`
     case 'login_code':
       return 'GoodCane: Your code is ••••••.'
+    case 'pickup_day':
+      return `GoodCane: Good morning! Order ${no} is pressed and ready today.`
+    case 'daily_summary':
+      return 'GoodCane today: daily order summary.'
   }
 }
 

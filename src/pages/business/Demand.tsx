@@ -35,7 +35,7 @@ export function Demand({ route }: { route: Route }) {
     <div className="stack">
       <div className="row-between wrap">
         <BatchPicker value={batchId} onChange={(id) => navigate(`/demand?batch=${id}`)} />
-        <SampleTag>Sample data</SampleTag>
+        {state.orders.some((o) => o.sample) && <SampleTag>Includes sample orders</SampleTag>}
       </div>
       <p className="small">
         {open ? (

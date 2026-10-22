@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Logo } from './components/ui'
+import { PRODUCTS } from './domain/catalog'
 import { Demand } from './pages/business/Demand'
 import { Messages } from './pages/business/Messages'
 import { Orders } from './pages/business/Orders'
@@ -14,10 +15,36 @@ const TABS = [
   { id: 'results', label: 'Results' },
 ] as const
 
+function GateArt() {
+  return (
+    <aside className="gate-art" aria-hidden="true">
+      <div className="gate-brand">
+        <Logo size={44} />
+        <span>GoodCane</span>
+      </div>
+      <div className="gate-bottles">
+        {[PRODUCTS[1], PRODUCTS[0], PRODUCTS[2]].map((p) => (
+          <img key={p.id} src={p.bottle} alt="" />
+        ))}
+      </div>
+      <div className="gate-copy">
+        <p className="gate-kicker">Staff room</p>
+        <h2>Know Saturday's batch before the cane is cut.</h2>
+        <ul>
+          <li>Live orders and demand</li>
+          <li>Texts that send themselves</li>
+          <li>Repeat customers, week on week</li>
+        </ul>
+      </div>
+    </aside>
+  )
+}
+
 function SignIn() {
   const { signIn, session, isStaff, signOut } = useStaff()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [show, setShow] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -34,40 +61,55 @@ function SignIn() {
     }
   }
 
-  if (session && isStaff === false) {
-    return (
-      <div className="gate">
-        <div className="card gate-card">
-          <Logo size={56} />
-          <h1>No staff access</h1>
-          <p className="small muted">{session.user.email} isn't on the GoodCane staff list.</p>
-          <button className="btn btn-ghost btn-block" onClick={() => void signOut()}>
-            Use another account
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="gate">
-      <form className="card gate-card" onSubmit={submit}>
-        <Logo size={56} />
-        <h1>GoodCane staff</h1>
-        <p className="small muted">Orders, demand and customer texts.</p>
-        <label className="field">
-          <span>Email</span>
-          <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
-        </label>
-        <label className="field">
-          <span>Password</span>
-          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </label>
-        {error && <p className="error">{error}</p>}
-        <button className="btn btn-primary btn-block" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
+      <GateArt />
+      <main className="gate-side">
+        {session && isStaff === false ? (
+          <div className="gate-form">
+            <h1>No staff access</h1>
+            <p className="muted">{session.user.email} isn't on the GoodCane staff list.</p>
+            <button className="btn btn-ghost btn-block" onClick={() => void signOut()}>
+              Use another account
+            </button>
+          </div>
+        ) : (
+          <form className="gate-form" onSubmit={submit}>
+            <h1>Welcome back</h1>
+            <p className="muted">Sign in to run this week's batch.</p>
+            <label className="field">
+              <span>Email</span>
+              <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <span className="pw">
+                <input
+                  type={show ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button type="button" className="pw-toggle" onClick={() => setShow((v) => !v)} aria-pressed={show}>
+                  {show ? 'Hide' : 'Show'}
+                </button>
+              </span>
+            </label>
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+            <button className="gate-submit" disabled={busy}>
+              {busy ? 'Signing in…' : 'Sign in'}
+            </button>
+            <a className="gate-back" href="/">
+              ← Back to the shop
+            </a>
+          </form>
+        )}
+      </main>
     </div>
   )
 }
