@@ -27,7 +27,7 @@ npm test
 
 Database:
 1. Apply `supabase/migrations/*.sql` to the project.
-2. Optional: run `supabase/sample-data.sql` to add six weeks of sample history. Those rows are flagged `is_sample` and never texted.
+2. Optional: run `supabase/reset.sql` to clear all orders and start fresh, or `supabase/sample-data.sql` to add six weeks of sample history. Those rows are flagged `is_sample` and never texted.
 3. Store the SasuSync key in Vault (and use a sender ID approved on that SasuSync account):
    ```sql
    select vault.create_secret('<sasusync api key>', 'sasusync_api_key');

@@ -61,13 +61,16 @@ There are two separate apps built from one codebase, sharing one Supabase databa
 |---|---|
 | Order received + order number | Customer places an order |
 | Confirmed / Payment received / Delivered / Cancelled | Staff change the status, or the customer cancels |
-| Weekly reminder (opt-in only, with STOP line) | Staff press "Send reminder" before the cutoff |
+| Weekly reminder (opt-in only, with STOP line) | Staff press "Send reminder" before the cutoff, or automatically on Thursday 9am once GoodCane switches "Last call" on |
+| Ready today | Automatically at 7am on Saturday, for every confirmed order |
+| Daily summary to staff | Automatically at 8pm: new orders today, bottles confirmed for Saturday, orders still to confirm |
 | Sign-in code | Customer asks to see their orders on a new phone |
 
 How sending works:
 - Texts are written by `public.sms_text()` from fixed templates, all under 160 characters, so nobody can make the system send arbitrary messages.
 - They are sent from the database through SasuSync using `pg_net`. The API key is stored in Supabase Vault, not in the website.
-- Delivery results are read back into `sms_log`.
+- Delivery results are read back into `sms_log` every minute.
+- Scheduled texts run with `pg_cron` in Accra time (UTC). Each has its own switch in SMS → Automatic texts. The Thursday last call ships switched **off**, because reminders need GoodCane's approval.
 - Sending is controlled by the `sms_live` setting and can be paused instantly.
 
 ### Security and data
@@ -113,5 +116,5 @@ A request is **not** a sale. Only `confirmed`, `paid` and `delivered` count as f
 |---|---|---|
 | **0. Validate** | Week 0 | Walk through the live site with GoodCane. Confirm A1–A10. Set real flavours, sizes, prices and pickup/delivery areas. Agree SMS wording and approve live sending. |
 | **1. Hand over** | Week 1 | Give GoodCane staff their logins. Register the GoodCane sender ID with SasuSync under GoodCane's account, agree the text wording, set real sizes, prices and pickup points, and delete the sample history. |
-| **2. Pilot** | Weeks 2–5 | 20–30 existing WhatsApp customers who opt in. Share the link on WhatsApp Status and in the TikTok bio with `?src=` tags. Texts run on GoodCane's approved sender ID; reminders go out only when staff press Send. |
+| **2. Pilot** | Weeks 2–5 | 20–30 existing WhatsApp customers who opt in. Share the link on WhatsApp Status and in the TikTok bio with `?src=` tags. Texts run on GoodCane's approved sender ID; reminders go out only when staff press Send, or on Thursday once GoodCane turns on the automatic last call. |
 | **3. Review** | Week 6 | Compare against the success thresholds in [MEASUREMENT.md](./MEASUREMENT.md). Decide whether to open to everyone, add mobile-money payment (with GoodCane's approval), or try subscriptions. |

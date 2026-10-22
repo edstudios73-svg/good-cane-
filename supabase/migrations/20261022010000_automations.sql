@@ -11,7 +11,7 @@ alter table public.sms_log add constraint sms_log_kind_check
   check (kind in ('received', 'confirmed', 'paid', 'fulfilled', 'cancelled', 'reminder', 'login_code', 'pickup_day', 'daily_summary'));
 
 insert into public.settings (key, value) values
-  ('auto_reminder', 'true'),
+  ('auto_reminder', 'false'),  -- needs GoodCane's approval
   ('auto_pickup_day', 'true'),
   ('auto_daily_summary', 'true'),
   ('staff_phone', '')
