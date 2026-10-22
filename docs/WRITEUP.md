@@ -1,6 +1,6 @@
 # GoodCane Weekly Pre-order: written explanation
 
-> Built for the CODED × GoodCane Virtual Paid Gig (EP11). Orders and texts are live. The staff dashboard also carries six weeks of **labelled sample history** so the results view isn't empty. No payments are connected; GoodCane records payment by hand.
+> Built for the CODED × GoodCane Virtual Paid Gig (EP11). Orders and texts are live, and the database was reset so it holds only real orders. No payments are connected; GoodCane records payment by hand. Demo video: https://goodcane-six.vercel.app/demo.mp4
 
 ## 1. The customer problem
 
@@ -93,7 +93,7 @@ A request is **not** a sale. Only `confirmed`, `paid` and `delivered` count as f
   - Order updates go to the number the customer gave for that order.
   - Weekly reminders are opt-in, at most one a week, and can be stopped in My orders or by replying STOP.
 - **Remove my details:** wipes the customer's name and number, cancels their unpaid open orders, and keeps anonymous totals for forecasting.
-- **Sample history:** the staff dashboard ships with six weeks of labelled sample history (`is_sample`) so the Results tab has something to show. These rows are never texted and can be deleted with one statement.
+- **Sample history (optional):** `supabase/sample-data.sql` adds six weeks of labelled history (`is_sample`) for testing the Results tab. Those rows are never texted, and `supabase/reset.sql` clears everything for a fresh start. The live demo runs with real orders only.
 
 ## 4. Assumptions to confirm with GoodCane
 
