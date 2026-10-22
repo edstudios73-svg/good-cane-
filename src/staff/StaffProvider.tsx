@@ -15,6 +15,7 @@ interface Staff {
   reload: () => Promise<void>
   businessMove: (orderId: string, to: OrderStatus, note?: string, notify?: boolean) => Promise<void>
   sendReminders: (batchId: string) => Promise<number>
+  resendSms: (id: string) => Promise<void>
   saveBatchRecord: (r: BatchRecord) => Promise<void>
 }
 
@@ -159,6 +160,11 @@ export function StaffProvider({ children }: { children: ReactNode }) {
         if (error) throw new Error(errorMessage(error))
         await reload()
         return data as number
+      },
+      resendSms: async (id) => {
+        const { error } = await supabase.rpc('staff_resend_sms', { p_id: id })
+        if (error) throw new Error(errorMessage(error))
+        await reload()
       },
       saveBatchRecord: async (r) => {
         const { error } = await supabase

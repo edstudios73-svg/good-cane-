@@ -497,3 +497,4 @@ button, input, select { font: inherit; color: inherit; }
   .shop-flavour .shop-main { padding-bottom: 24px; }
   .checkout .summary { position: sticky; bottom: 0; }
 }
+.resend { margin-top: 6px; min-height: 32px; padding: 4px 12px; font-size: .8rem; }

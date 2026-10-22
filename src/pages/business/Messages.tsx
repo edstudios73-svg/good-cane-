@@ -24,7 +24,7 @@ const STATUS_LABEL: Record<SmsStatus, string> = {
 }
 
 export function Messages() {
-  const { state, now, sendReminders } = useStaff()
+  const { state, now, sendReminders, resendSms } = useStaff()
   const [flash, setFlash] = useState('')
   const batch = openBatches(now, 1)[0]
   const alreadyReminded = new Set(state.smsLog.filter((m) => m.kind === 'reminder' && m.batchId === batch.id).map((m) => m.customerId))
@@ -108,6 +108,21 @@ export function Messages() {
                     <td>
                       <span className={`sms-status sms-${m.status}`}>{STATUS_LABEL[m.status]}</span>
                       {m.error && <p className="small muted sms-error">{m.error}</p>}
+                      {(m.status === 'failed' || m.status === 'skipped') && m.kind !== 'login_code' && m.to && !m.to.startsWith('00') && (
+                        <button
+                          className="btn btn-ghost btn-sm resend"
+                          onClick={async () => {
+                            try {
+                              await resendSms(m.id)
+                              setFlash('Text sent again.')
+                            } catch (e) {
+                              setFlash((e as Error).message)
+                            }
+                          }}
+                        >
+                          Resend
+                        </button>
+                      )}
                     </td>
                   </tr>
                 )
