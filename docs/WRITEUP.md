@@ -115,7 +115,7 @@ A request is **not** a sale. Only `confirmed`, `paid` and `delivered` count as f
 | A1 | Production is **weekly**, on a fixed day (currently: Saturday) | The whole schedule is built around it |
 | A2 | Pre-orders can close **~2 days before** production (currently: Thu 18:00) | Time needed to buy cane and plan the press |
 | A3 | Flavour line-up matches the public posts and is stable week to week | The menu |
-| A4 | Bottle size(s) and **prices**: unknown, so not shown | Totals and payment |
+| A4 | Bottle size(s) and **prices**: unknown. The live demo uses **sample prices** (GH₵ 20–30) that GoodCane replaces in the dashboard's Menu tab | Totals and payment |
 | A5 | Pickup points and **delivery areas/fees**: unknown, so placeholders are used | Fulfilment options |
 | A6 | Payment is by mobile money or on collection, confirmed by GoodCane by hand | The "Paid" step |
 | A7 | Customers are happy to get order updates and an opt-in weekly reminder by **SMS** from a "GoodCane" sender ID | Reminder channel; sender ID must be registered with SasuSync |
