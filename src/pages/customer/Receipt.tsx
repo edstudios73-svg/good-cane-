@@ -34,7 +34,7 @@ function smsLine(m: SmsLog | undefined): string | null {
 }
 
 export function Receipt({ id, route }: { id: string; route: Route }) {
-  const { now, me, orders, loadOrder, cancelOrder, setReminders } = useShop()
+  const { now, me, orders, loadOrder, placedHere, cancelOrder, setReminders } = useShop()
   const [data, setData] = useState<{ order: Order; sms: SmsLog[] } | null | undefined>(undefined)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -65,8 +65,9 @@ export function Receipt({ id, route }: { id: string; route: Route }) {
   const batch = batchFromId(order.batchId)
   const isNew = route.query.get('new') === '1'
   const firstText = data.sms.find((m) => m.kind === 'received')
-  const mine = me && orders.some((o) => o.id === order.id)
-  const nextOpen = reorderBatch(orders, order.customerId, now)
+  const inAccount = orders.some((o) => o.id === order.id)
+  const mine = (me && inAccount) || placedHere(order.id)
+  const nextOpen = reorderBatch(inAccount ? orders : [...orders, order], order.customerId, now)
 
   const cancel = async () => {
     if (!confirm(`Cancel order ${formatOrderNumber(order.number)}?`)) return

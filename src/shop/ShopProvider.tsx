@@ -65,6 +65,8 @@ interface Shop {
   placeOrder: (o: NewOrder) => Promise<Order>
   /** An order this phone can see: from the account, or one placed here before signing in. */
   loadOrder: (id: string) => Promise<{ order: Order; sms: SmsLog[] } | null>
+  /** True when this phone placed the order, even without being signed in. */
+  placedHere: (id: string) => boolean
   cancelOrder: (order: Order) => Promise<void>
   setReminders: (on: boolean) => Promise<void>
   requestCode: (phone: string) => Promise<void>
@@ -175,6 +177,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         else await refresh(token)
         return res.order
       },
+
+      placedHere: (id) => id in recent,
 
       loadOrder: async (id) => {
         const own = account?.orders.find((x) => x.id === id)
