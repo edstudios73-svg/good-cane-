@@ -50,7 +50,7 @@ export function Messages() {
           <div>
             <h2>Send the reminder now · {formatDay(batch.productionDate)}</h2>
             <p className="small muted">
-              Orders close {formatCutoff(batch.cutoff)}. {optedIn} customers have opted in. {due.length} haven't ordered or been reminded yet.
+              Orders close {formatCutoff(batch.cutoff)}. {optedIn === 1 ? '1 customer has' : `${optedIn} customers have`} opted in, and {due.length} of them still need a reminder.
             </p>
           </div>
           <button

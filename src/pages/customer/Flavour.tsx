@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { formatClose, formatDate, openBatches } from '../../domain/batches'
-import { BOTTLE_SIZE, PRODUCTS } from '../../domain/catalog'
+import { formatPrice, useMenu } from '../../lib/menu'
 import { ArrowsIcon, BackIcon, HeartIcon, ShareIcon } from '../../components/icons'
 import { Stepper } from '../../components/ui'
 import { href, navigate } from '../../router'
@@ -8,8 +8,9 @@ import { useShop } from '../../shop/ShopProvider'
 
 export function Flavour({ id }: { id: string }) {
   const { basket, setBasketQty, now, favourites, toggleFavourite, flash } = useShop()
-  const index = PRODUCTS.findIndex((x) => x.id === id)
-  const p = PRODUCTS[index]
+  const menu = useMenu()
+  const index = menu.findIndex((x) => x.id === id)
+  const p = menu[index]
   const [qty, setQty] = useState(1)
   const [turn, setTurn] = useState<'left' | 'right' | null>(null)
   const touch = useRef<number | null>(null)
@@ -26,7 +27,7 @@ export function Flavour({ id }: { id: string }) {
 
   const go = (dir: 1 | -1) => {
     setTurn(dir === 1 ? 'left' : 'right')
-    const n = PRODUCTS[(index + dir + PRODUCTS.length) % PRODUCTS.length]
+    const n = menu[(index + dir + menu.length) % menu.length]
     navigate(`/flavour/${n.id}`)
   }
 
@@ -98,7 +99,7 @@ export function Flavour({ id }: { id: string }) {
 
           <p className="detail-label">Flavour</p>
           <div className="swatches">
-            {PRODUCTS.map((x) => (
+            {menu.map((x) => (
               <a
                 key={x.id}
                 href={href(`/flavour/${x.id}`)}
@@ -123,16 +124,23 @@ export function Flavour({ id }: { id: string }) {
           </div>
 
           <div className="buy-row">
-            <div className="size">
-              {BOTTLE_SIZE.split(' ')[0]}
-              <small> ml</small>
-            </div>
+            {p.price != null ? (
+              <div className="size priced">
+                {formatPrice(p.price)}
+                <small>{p.size} bottle</small>
+              </div>
+            ) : (
+              <div className="size">
+                {(p.size ?? '500 ml').split(' ')[0]}
+                <small> {(p.size ?? '500 ml').split(' ').slice(1).join(' ')}</small>
+              </div>
+            )}
             <button className="pill-btn dark big" onClick={add}>
               Add to order
             </button>
           </div>
           <p className="fine">
-            {inOrder > 0 ? `${inOrder} in your order · ` : ''}For {formatDate(next.productionDate)}, orders close {formatClose(next.cutoff)}. Price confirmed by SMS.
+            {inOrder > 0 ? `${inOrder} in your order · ` : ''}For {formatDate(next.productionDate)}, orders close {formatClose(next.cutoff)}.{p.price == null ? ' Price confirmed by SMS.' : ' You pay when we confirm.'}
           </p>
           {inOrder > 0 && (
             <a className="link" href={href('/cart')}>

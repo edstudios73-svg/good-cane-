@@ -4,6 +4,7 @@ import { bottles, canCustomerCancel, formatOrderNumber } from '../../domain/orde
 import { maskPhone } from '../../domain/sms'
 import type { Order, OrderStatus, SmsLog } from '../../domain/types'
 import { LinesList, StatusPill } from '../../components/ui'
+import { formatPrice, linesTotal } from '../../lib/menu'
 import { href, type Route } from '../../router'
 import { useShop } from '../../shop/ShopProvider'
 import { reorderBatch } from './reorder'
@@ -107,6 +108,12 @@ export function Receipt({ id, route }: { id: string; route: Route }) {
           <span>Bottles</span>
           <span>{bottles(order.lines)}</span>
         </div>
+        {linesTotal(order.lines) != null && (
+          <div className="lines-total">
+            <span>Total</span>
+            <strong>{formatPrice(linesTotal(order.lines)!)}</strong>
+          </div>
+        )}
         <hr />
         {order.status !== 'cancelled' && (
           <ol className="timeline" aria-label="Order progress">

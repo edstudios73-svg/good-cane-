@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { CUSTOMER_STATUS_LABEL, STATUS_LABEL } from '../domain/orders'
-import { PRODUCTS } from '../domain/catalog'
 import type { OrderLine, OrderStatus, Product } from '../domain/types'
+import { menuItem } from '../lib/menu'
 
 export function productById(id: string): Product | undefined {
-  return PRODUCTS.find((p) => p.id === id)
+  return menuItem(id)
 }
 
 export function productName(id: string): string {

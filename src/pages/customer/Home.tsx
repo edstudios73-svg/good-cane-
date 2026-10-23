@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatDate, openBatches } from '../../domain/batches'
-import { BOTTLE_SIZE, PRODUCTS, TASTES } from '../../domain/catalog'
+import { TASTES } from '../../domain/catalog'
+import { formatPrice, useMenu } from '../../lib/menu'
 import { BagIcon, BellIcon, ChatIcon, FilterIcon, HeartIcon, SearchIcon, SunIcon } from '../../components/icons'
 import { supabase } from '../../lib/supabase'
 import { Countdown, LinesList } from '../../components/ui'
@@ -12,6 +13,7 @@ import { lastReorderable, reorderBatch } from './reorder'
 export function Home({ route }: { route: Route }) {
   const { orders, now, me, basket, setBasketQty, favourites, toggleFavourite, flash } = useShop()
   const [next] = openBatches(now, 1)
+  const menu = useMenu()
   const last = me ? lastReorderable(orders, me.id) : undefined
   const again = me ? reorderBatch(orders, me.id, now) : next
   const [query, setQuery] = useState('')
@@ -39,7 +41,7 @@ export function Home({ route }: { route: Route }) {
   }, [route])
 
   const q = query.trim().toLowerCase()
-  const shown = PRODUCTS.filter(
+  const shown = menu.filter(
     (p) =>
       (taste === 'All' || p.taste === taste) &&
       (!onlyFavs || favourites.includes(p.id)) &&
@@ -110,7 +112,7 @@ export function Home({ route }: { route: Route }) {
             </span>
           </div>
           <div className="promo-art" aria-hidden="true">
-            {[PRODUCTS[1], PRODUCTS[0], PRODUCTS[2]].map((p) => (
+            {menu.slice(0, 3).map((p) => (
               <img key={p.id} src={p.bottle} alt="" />
             ))}
           </div>
@@ -131,7 +133,7 @@ export function Home({ route }: { route: Route }) {
 
       <div className="chips" role="tablist" aria-label="Filter by taste">
         {['All', ...TASTES].map((t) => {
-          const p = PRODUCTS.find((x) => x.taste === t)
+          const p = menu.find((x) => x.taste === t)
           return (
             <button key={t} role="tab" aria-selected={taste === t} className={`chip ${taste === t ? 'on' : ''}`} onClick={() => setTaste(t)}>
               {p && <span className="chip-dot" style={{ background: p.accent }} />}
@@ -160,7 +162,7 @@ export function Home({ route }: { route: Route }) {
                   <img src={p.bottle} alt={`${p.name} bottle`} loading="lazy" />
                 </span>
                 <span className="card-name">{p.short}</span>
-                <span className="card-meta">{BOTTLE_SIZE}</span>
+                <span className="card-meta">{p.price != null ? formatPrice(p.price) : p.size}</span>
               </a>
               <button className="card-add" onClick={() => add(p.id, p.short)} aria-label={`Add ${p.name}`}>
                 {basket[p.id] ? basket[p.id] : '+'}
@@ -201,7 +203,7 @@ export function Home({ route }: { route: Route }) {
             </div>
           </li>
         </ol>
-        <p className="how-note">Sizes and prices are confirmed with your order.</p>
+        {menu.some((p) => p.price == null) && <p className="how-note">Prices are confirmed by text when we confirm your order.</p>}
       </section>
     </div>
   )

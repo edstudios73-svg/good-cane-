@@ -19,6 +19,11 @@ export interface Product {
   /** Light tint of the label colour for backgrounds. */
   tint: string
   image: string
+  /** Set by GoodCane in the dashboard, in pesewas. Null until they price it. */
+  price?: number | null
+  size?: string
+  /** Hidden juices stay on old orders but not on the menu. */
+  active?: boolean
 }
 
 /**
@@ -37,6 +42,8 @@ export type Source = 'tiktok' | 'instagram' | 'whatsapp' | 'direct' | 'reorder' 
 export interface OrderLine {
   productId: string
   qty: number
+  /** Price per bottle when the order was placed, in pesewas. */
+  price?: number
 }
 
 export interface StatusChange {

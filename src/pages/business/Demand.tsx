@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { batchFromId, formatCutoff, isOpen, pastBatches, timeLeft } from '../../domain/batches'
 import { demandForBatch, forecastBottles, forecastForProduct, historicalConfirmRate } from '../../domain/demand'
 import { forecastAccuracy, pct } from '../../domain/metrics'
-import { PRODUCTS } from '../../domain/catalog'
+import { useMenu } from '../../lib/menu'
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 import { CountUp, FlavourDot, SampleTag, productName } from '../../components/ui'
 import { href, navigate, type Route } from '../../router'
 import { useStaff } from '../../staff/StaffProvider'
@@ -16,7 +18,8 @@ export function Demand({ route }: { route: Route }) {
   const batch = batchFromId(batchId)
   const open = isOpen(batchId, now)
 
-  const d = demandForBatch(state.orders, batchId, PRODUCTS)
+  const menu = useMenu(true)
+  const d = demandForBatch(state.orders, batchId, menu.filter((p) => p.active || state.orders.some((o) => o.batchId === batchId && o.lines.some((l) => l.productId === p.id))))
   const pastIds = pastBatches(now, 6)
     .map((b) => b.id)
     .filter((id) => id !== batchId && state.batchRecords.some((r) => r.batchId === id))
@@ -54,7 +57,7 @@ export function Demand({ route }: { route: Route }) {
             <CountUp value={d.firmBottles} />
           </strong>
           <span className="small">
-            {d.orders.confirmed + d.orders.paid + d.orders.fulfilled} orders · {d.totals.paid + d.totals.fulfilled} paid
+            {plural(d.orders.confirmed + d.orders.paid + d.orders.fulfilled, 'order')} · {d.totals.paid + d.totals.fulfilled} paid
           </span>
         </div>
         <div className="tile tile-pending">
@@ -63,7 +66,7 @@ export function Demand({ route }: { route: Route }) {
             <CountUp value={d.pendingBottles} />
           </strong>
           <span className="small">
-            {d.orders.requested} requests · <a href={href(`/orders?batch=${batchId}&status=requested`)}>review</a>
+            {plural(d.orders.requested, 'request')} · <a href={href(`/orders?batch=${batchId}&status=requested`)}>review</a>
           </span>
         </div>
         <div className="tile">
@@ -139,8 +142,8 @@ export function Demand({ route }: { route: Route }) {
           </tfoot>
         </table>
         <p className="small muted">
-          "Make" = confirmed bottles + requested bottles × {pct(rate)}, the share of requests that were confirmed over recent weeks. Walk-in
-          stock is not included — add your own buffer.
+          "Make" counts every confirmed bottle, plus {pct(rate)} of the requests still waiting, because that's how many usually get confirmed. It
+          doesn't include walk-in sales, so press a little extra for the shop.
         </p>
       </section>
 

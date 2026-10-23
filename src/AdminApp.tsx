@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Logo } from './components/ui'
 import { PRODUCTS } from './domain/catalog'
 import { Demand } from './pages/business/Demand'
+import { Menu } from './pages/business/Menu'
 import { Messages } from './pages/business/Messages'
 import { Orders } from './pages/business/Orders'
 import { Results } from './pages/business/Results'
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'demand', label: 'Demand' },
   { id: 'orders', label: 'Orders' },
   { id: 'messages', label: 'SMS' },
+  { id: 'menu', label: 'Menu' },
   { id: 'results', label: 'Results' },
 ] as const
 
@@ -152,6 +154,7 @@ export default function AdminApp() {
         {active === 'demand' && <Demand route={route} />}
         {active === 'orders' && <Orders route={route} />}
         {active === 'messages' && <Messages />}
+        {active === 'menu' && <Menu />}
         {active === 'results' && <Results />}
       </main>
     </div>

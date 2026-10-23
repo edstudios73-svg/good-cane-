@@ -3,6 +3,7 @@ import { batchFromId, formatDay } from '../../domain/batches'
 import { STATUS_LABEL, bottles, businessActions, formatOrderNumber } from '../../domain/orders'
 import type { Order, OrderStatus } from '../../domain/types'
 import { LinesList, SampleTag, StatusPill } from '../../components/ui'
+import { formatPrice, linesTotal } from '../../lib/menu'
 import { navigate, type Route } from '../../router'
 import { useStaff } from '../../staff/StaffProvider'
 import { BatchPicker, useBatchOptions } from './BatchPicker'
@@ -97,6 +98,7 @@ export function Orders({ route }: { route: Route }) {
               <LinesList lines={o.lines} />
               <p className="small">
                 <strong>{bottles(o.lines)} bottles</strong>
+                {linesTotal(o.lines) != null && <> · {formatPrice(linesTotal(o.lines)!)}</>}
                 {o.note && <> · “{o.note}”</>}
               </p>
               {o.status === 'cancelled' && lastChange.status === 'cancelled' && (

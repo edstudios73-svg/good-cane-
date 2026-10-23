@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { formatClose, formatDate, openBatches } from '../../domain/batches'
-import { BOTTLE_SIZE, PRODUCTS } from '../../domain/catalog'
+import { formatPrice, linesTotal, useMenu } from '../../lib/menu'
 import type { Product } from '../../domain/types'
 import { TrashIcon } from '../../components/icons'
 import { href, type Route } from '../../router'
@@ -37,7 +37,10 @@ function Row({ p, qty, onQty, onRemove }: { p: Product; qty: number; onQty: (n: 
           <a href={href(`/flavour/${p.id}`)} className="cart-name">
             {p.short}
           </a>
-          <span className="cart-meta">{BOTTLE_SIZE} · sugarcane</span>
+          <span className="cart-meta">
+            {p.size}
+            {p.price != null && ` · ${formatPrice(p.price)}`}
+          </span>
         </div>
         <div className="qty" role="group" aria-label={`Quantity of ${p.name}`}>
           <button className="qty-minus" onClick={() => onQty(qty - 1)} aria-label={`One less ${p.name}`}>
@@ -58,7 +61,9 @@ function Row({ p, qty, onQty, onRemove }: { p: Product; qty: number; onQty: (n: 
 
 export function Cart({ route }: { route: Route }) {
   const { basket, setBasketQty, clearBasket, now, flash } = useShop()
-  const items = PRODUCTS.filter((p) => basket[p.id])
+  const menu = useMenu()
+  const items = menu.filter((p) => basket[p.id])
+  const price = linesTotal(items.map((p) => ({ qty: basket[p.id], price: p.price })))
   const total = items.reduce((n, p) => n + basket[p.id], 0)
   const [next] = openBatches(now, 1)
   const from = route.query.get('from')
@@ -87,7 +92,7 @@ export function Cart({ route }: { route: Route }) {
       {items.length === 0 ? (
         <div className="empty-cart">
           <div className="empty-bottles" aria-hidden="true">
-            {PRODUCTS.slice(0, 3).map((p) => (
+            {menu.slice(0, 3).map((p) => (
               <img key={p.id} src={p.bottle} alt="" />
             ))}
           </div>
@@ -135,7 +140,7 @@ export function Cart({ route }: { route: Route }) {
             </div>
             <div className="summary-line total">
               <span>Total</span>
-              <strong>Confirmed by SMS</strong>
+              <strong>{price != null ? formatPrice(price) : 'Confirmed by SMS'}</strong>
             </div>
             <a className="pill-btn dark big block" href={href(checkout)}>
               Checkout

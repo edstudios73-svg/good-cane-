@@ -43,7 +43,7 @@ export function Results() {
         <div className="tile">
           <span className="mono small">FORECAST ACCURACY</span>
           <strong>{pct(avgAcc)}</strong>
-          <span className="small">1 − |forecast − sold| ÷ sold</span>
+          <span className="small">How close the forecast came to what sold</span>
         </div>
       </div>
 

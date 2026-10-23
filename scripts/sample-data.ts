@@ -6,7 +6,10 @@
 
 import { randomUUID } from 'node:crypto'
 import { openBatches, pastBatches } from '../src/domain/batches'
-import { DELIVERY_AREAS, PICKUP_POINTS, PRODUCTS } from '../src/domain/catalog'
+import { PICKUP_POINTS, PRODUCTS } from '../src/domain/catalog'
+
+// Placeholder areas for labelled sample rows only.
+const DELIVERY_AREAS = ['Delivery area 1 (sample)', 'Delivery area 2 (sample)', 'Delivery area 3 (sample)']
 import { FIRM, bottles } from '../src/domain/orders'
 import type { BatchRecord, Customer, Order, OrderLine, OrderStatus, Source } from '../src/domain/types'
 

@@ -78,7 +78,6 @@ export const PRODUCTS: Product[] = [
   },
 ]
 
-// The shop location is from GoodCane's public profile; the second pickup point
-// and all delivery areas are placeholders until GoodCane confirms them.
-export const PICKUP_POINTS = ['GoodCane shop · Aviation Road, Adenta', 'Pickup point B (sample)']
-export const DELIVERY_AREAS = ['Delivery area 1 (sample)', 'Delivery area 2 (sample)', 'Delivery area 3 (sample)']
+// The shop location is from GoodCane's public profile. Delivery areas and fees
+// aren't published, so customers type their area and GoodCane confirms by phone.
+export const PICKUP_POINTS = ['GoodCane shop · Aviation Road, Adenta']

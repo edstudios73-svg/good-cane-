@@ -1,7 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { formatClose, formatDate, openBatches } from '../../domain/batches'
 import { bottles, formatOrderNumber, isValidPhone } from '../../domain/orders'
-import { DELIVERY_AREAS, PICKUP_POINTS, PRODUCTS } from '../../domain/catalog'
+import { PICKUP_POINTS } from '../../domain/catalog'
+import { formatPrice, linesTotal, useMenu } from '../../lib/menu'
 import type { Fulfilment, Source } from '../../domain/types'
 import { BackIcon } from '../../components/icons'
 import { campaignSource, href, navigate, type Route } from '../../router'
@@ -27,15 +28,16 @@ export function OrderForm({ route }: { route: Route }) {
   const [busy, setBusy] = useState(false)
   const [serverError, setServerError] = useState('')
 
-  const items = PRODUCTS.filter((p) => basket[p.id])
+  const menu = useMenu()
+  const items = menu.filter((p) => basket[p.id])
+  const price = linesTotal(items.map((p) => ({ qty: basket[p.id], price: p.price })))
   const lines = items.map((p) => ({ productId: p.id, qty: basket[p.id] }))
   const total = bottles(lines)
-  const locations = fulfilment === 'pickup' ? PICKUP_POINTS : DELIVERY_AREAS
   const batch = batches.find((b) => b.id === batchId)!
   const existing = useMemo(() => orders.find((o) => o.batchId === batchId && o.status !== 'cancelled'), [orders, batchId])
 
   const errors = {
-    location: locations.includes(location) ? '' : fulfilment === 'pickup' ? "Choose where you'll pick up." : 'Choose your area.',
+    location: fulfilment === 'pickup' ? (PICKUP_POINTS.includes(location) ? '' : "Choose where you'll pick up.") : location.trim().length >= 2 ? '' : 'Tell us your area.',
     name: name.trim().length < 2 ? 'We need a name for the order.' : '',
     phone: isValidPhone(phone) ? '' : 'Enter a 10-digit number, like 024 123 4567.',
   }
@@ -115,17 +117,19 @@ export function OrderForm({ route }: { route: Route }) {
                 </label>
               ))}
             </div>
-            <label className="field">
-              <span>{fulfilment === 'pickup' ? 'Pick up from' : 'Area'}</span>
-              <select value={location} onChange={(e) => setLocation(e.target.value)}>
-                <option value="">Choose…</option>
-                {locations.map((l) => (
-                  <option key={l}>{l}</option>
-                ))}
-              </select>
-            </label>
+            {fulfilment === 'pickup' ? (
+              <p className="pickup-spot">
+                <strong>GoodCane shop</strong>
+                <span>Aviation Road, Adenta, Accra</span>
+              </p>
+            ) : (
+              <label className="field">
+                <span>Your area</span>
+                <input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={60} placeholder="e.g. Adenta, East Legon, Madina" autoComplete="address-level3" />
+              </label>
+            )}
             {err('location')}
-            {fulfilment === 'delivery' && <p className="fine">We'll call or text for the exact address.</p>}
+            {fulfilment === 'delivery' && <p className="fine">We'll call you for the exact spot and let you know the delivery fee before you pay.</p>}
           </section>
 
           <section className="panel">
@@ -175,6 +179,12 @@ export function OrderForm({ route }: { route: Route }) {
             <span>Collect</span>
             <strong>{formatDate(batch.productionDate)}</strong>
           </div>
+          {price != null && (
+            <div className="summary-line">
+              <span>Total</span>
+              <strong>{formatPrice(price)}</strong>
+            </div>
+          )}
           <div className="summary-line total">
             <span>Payment</span>
             <strong>After we confirm</strong>
